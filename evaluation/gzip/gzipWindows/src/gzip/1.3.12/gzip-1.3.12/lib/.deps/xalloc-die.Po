@@ -1,0 +1,31 @@
+xalloc-die.o xalloc-die.o: ../../gzip-1.3.12-src/lib/xalloc-die.c \
+  ./config.h ../../gzip-1.3.12-src/lib/xalloc.h \
+  g:/mingw/3.4.5/bin/../lib/gcc/mingw32/3.4.5/../../../../include/stddef.h \
+  g:/mingw/3.4.5/bin/../lib/gcc/mingw32/3.4.5/include/stddef.h ./stdlib.h \
+  g:/mingw/3.4.5/bin/../lib/gcc/mingw32/3.4.5/../../../../include/stdlib.h \
+  g:/mingw/3.4.5/bin/../lib/gcc/mingw32/3.4.5/../../../../include/_mingw.h \
+  ../../gzip-1.3.12-src/lib/error.h ../../gzip-1.3.12-src/lib/exitfail.h \
+  ../../gzip-1.3.12-src/lib/gettext.h \
+  g:/mingw/3.4.5/bin/../lib/gcc/mingw32/3.4.5/../../../../include/string.h
+
+./config.h:
+
+../../gzip-1.3.12-src/lib/xalloc.h:
+
+g:/mingw/3.4.5/bin/../lib/gcc/mingw32/3.4.5/../../../../include/stddef.h:
+
+g:/mingw/3.4.5/bin/../lib/gcc/mingw32/3.4.5/include/stddef.h:
+
+./stdlib.h:
+
+g:/mingw/3.4.5/bin/../lib/gcc/mingw32/3.4.5/../../../../include/stdlib.h:
+
+g:/mingw/3.4.5/bin/../lib/gcc/mingw32/3.4.5/../../../../include/_mingw.h:
+
+../../gzip-1.3.12-src/lib/error.h:
+
+../../gzip-1.3.12-src/lib/exitfail.h:
+
+../../gzip-1.3.12-src/lib/gettext.h:
+
+g:/mingw/3.4.5/bin/../lib/gcc/mingw32/3.4.5/../../../../include/string.h:

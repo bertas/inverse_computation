@@ -1,0 +1,62 @@
+% compiler: GNU Prolog 1.4.2
+% file    : Fibonacci.pl
+
+
+file_name('/home/yufeijiang/Dropbox/security thursday/multilingual obfuscation/babel/evaluation/fibonacci/CIL/translation/Fibonacci.pl').
+
+
+predicate(fibonacci/2,1,static,private,monofile,global,[
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[is,2]),
+    put_integer(0,2),
+    execute(ifone/2)]).
+
+
+predicate(ifone/2,3,static,private,monofile,global,[
+    try_me_else(1),
+    get_integer(1,0),
+    get_integer(1,1),
+    proceed,
+
+label(1),
+    trust_me_else_fail,
+    allocate(2),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    put_value(y(0),0),
+    put_integer(1,1),
+    call((\=)/2),
+    put_value(y(0),0),
+    put_value(y(1),1),
+    deallocate,
+    execute(iftwo/2)]).
+
+
+predicate(iftwo/2,6,static,private,monofile,global,[
+    try_me_else(1),
+    get_integer(2,0),
+    get_integer(1,1),
+    proceed,
+
+label(1),
+    trust_me_else_fail,
+    allocate(4),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[is,2]),
+    math_load_value(y(0),0),
+    call_c('Pl_Fct_Dec',[fast_call,x(0)],[x(0)]),
+    put_variable(y(2),1),
+    call(fibonacci/2),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[is,2]),
+    math_load_value(y(0),0),
+    put_integer(2,1),
+    call_c('Pl_Fct_Sub',[fast_call,x(0)],[x(0),x(1)]),
+    put_variable(y(3),1),
+    call(fibonacci/2),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[is,2]),
+    math_load_value(y(2),0),
+    math_load_value(y(3),1),
+    call_c('Pl_Fct_Add',[fast_call,x(0)],[x(0),x(1)]),
+    get_value(y(1),0),
+    deallocate,
+    proceed]).

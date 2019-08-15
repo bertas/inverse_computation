@@ -1,0 +1,1139 @@
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/Makefile.in gzip-1.3.12-src/Makefile.in
+--- gzip-1.3.12-orig/Makefile.in	2007-04-13 23:39:49.000000000 +0200
++++ gzip-1.3.12-src/Makefile.in	2007-06-23 12:30:58.984375000 +0200
+@@ -33,7 +33,8 @@
+ # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ 
+ 
+-VPATH = @srcdir@
++resdir = @top_builddir@/resource
++VPATH = @srcdir@ $(resdir)
+ pkgdatadir = $(datadir)/@PACKAGE@
+ pkglibdir = $(libdir)/@PACKAGE@
+ pkgincludedir = $(includedir)/@PACKAGE@
+@@ -86,7 +87,7 @@ PROGRAMS = $(bin_PROGRAMS)
+ am_gzip_OBJECTS = bits.$(OBJEXT) crypt.$(OBJEXT) deflate.$(OBJEXT) \
+ 	gzip.$(OBJEXT) inflate.$(OBJEXT) lzw.$(OBJEXT) trees.$(OBJEXT) \
+ 	unlzh.$(OBJEXT) unlzw.$(OBJEXT) unpack.$(OBJEXT) \
+-	unzip.$(OBJEXT) util.$(OBJEXT) zip.$(OBJEXT)
++	unzip.$(OBJEXT) util.$(OBJEXT) zip.$(OBJEXT) gzip-res.$(OBJEXT)
+ gzip_OBJECTS = $(am_gzip_OBJECTS)
+ gzip_DEPENDENCIES = lib/libgzip.a
+ binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
+@@ -182,7 +183,7 @@ INSTALL_DATA = @INSTALL_DATA@
+ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+-LDFLAGS = @LDFLAGS@
++LDFLAGS = @LDFLAGS@ $(VERSADD)
+ LIBGZIP_LIBDEPS = @LIBGZIP_LIBDEPS@
+ LIBGZIP_LTLIBDEPS = @LIBGZIP_LTLIBDEPS@
+ LIBINTL = @LIBINTL@
+@@ -221,6 +222,9 @@ SYS_TIME_H = @SYS_TIME_H@
+ SYS_TIME_H_DEFINES_STRUCT_TIMESPEC = @SYS_TIME_H_DEFINES_STRUCT_TIMESPEC@
+ TIME_H_DEFINES_STRUCT_TIMESPEC = @TIME_H_DEFINES_STRUCT_TIMESPEC@
+ VERSION = @VERSION@
++MAJOR=$(shell echo $(VERSION) | sed -e "s/\..*$$//")
++MINOR=$(shell echo $(VERSION) | sed -e "s/^[^\.]*\.0*\([^.]*\).*$$/\1/")
++VERSADD=-Wl,--major-image-version=$(MAJOR) -Wl,--minor-image-version=$(MINOR)
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+ abs_top_builddir = @abs_top_builddir@
+@@ -291,7 +295,7 @@ bin_SCRIPTS = gunzip gzexe zcat zcmp zdi
+ 
+ gzip_SOURCES = \
+   bits.c crypt.c deflate.c gzip.c inflate.c lzw.c \
+-  trees.c unlzh.c unlzw.c unpack.c unzip.c util.c zip.c
++  trees.c unlzh.c unlzw.c unpack.c unzip.c util.c zip.c gzip-res.rc
+ 
+ gzip_LDADD = lib/libgzip.a
+ SUFFIXES = .in
+@@ -307,7 +311,7 @@ MOSTLYCLEANFILES = _match.i match_.s _ma
+ all: all-recursive
+ 
+ .SUFFIXES:
+-.SUFFIXES: .in .c .o .obj
++.SUFFIXES: .in .c .o .obj .rc .exe
+ am--refresh:
+ 	@:
+ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+@@ -438,6 +442,11 @@ distclean-compile:
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/util.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zip.Po@am__quote@
+ 
++# Rule to make compiled resource (Windows)
++.rc.o:
++	windres --include-dir $(resdir) -i $< -o $@
++
++
+ .c.o:
+ @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+ @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@@ -901,7 +910,7 @@ uninstall-man: uninstall-man1
+ 
+ 
+ gzip.doc: gzip.1
+-	groff -man -Tascii $(srcdir)/gzip.1 | col -b | uniq >$@
++	groff -P-bcou -rC1 -rD1 -man -Tascii $(srcdir)/gzip.1 | col -b | uniq >$@
+ 
+ gzip.doc.gz: gzip.doc
+ 	gzip <$? >$@
+@@ -944,7 +953,7 @@ install-exec-hook remove-installed-links
+ 	     rm -f "$$dest" && \
+ 	     case $@ in \
+ 	     install-exec-hook) \
+-	       ln "$$source" "$$dest" || $(LN_S) "$$source" "$$dest";; \
++	       cp -fp "$$source" "$$dest" || $(LN_S) "$$source" "$$dest";; \
+ 	     esac \
+ 	    ) || exit; \
+ 	  done; \
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/deflate.c gzip-1.3.12-src/deflate.c
+--- gzip-1.3.12-orig/deflate.c	2006-12-07 23:53:00.000000000 +0100
++++ gzip-1.3.12-src/deflate.c	2007-04-14 08:16:44.921875000 +0200
+@@ -135,6 +135,14 @@ static char rcsid[] = "$Id: deflate.c,v 
+ #endif
+ /* Matches of length 3 are discarded if their distance exceeds TOO_FAR */
+ 
++#ifndef RSYNC_WIN
++#  define RSYNC_WIN 4096
++#endif
++/* Size of rsync window, must be < MAX_DIST */
++
++#define RSYNC_SUM_MATCH(sum) ((sum) % RSYNC_WIN == 0)
++/* Whether window sum matches magic value */
++
+ /* ===========================================================================
+  * Local data used by the "longest match" routines.
+  */
+@@ -216,6 +224,8 @@ local int compr_level;
+ unsigned near good_match;
+ /* Use a faster search when the previous match is longer than this */
+ 
++local ulg rsync_sum;  /* rolling sum of rsync window */
++local ulg rsync_chunk_end; /* next rsync sequence point */
+ 
+ /* Values for max_lazy_match, good_match and max_chain_length, depending on
+  * the desired pack level (0..9). The values given below have been tuned to
+@@ -314,6 +324,10 @@ void lm_init (pack_level, flags)
+ #endif
+     /* prev will be initialized on the fly */
+ 
++    /* rsync params */
++    rsync_chunk_end = 0xFFFFFFFFUL;
++    rsync_sum = 0;
++
+     /* Set the default configuration parameters:
+      */
+     max_lazy_match   = configuration_table[pack_level].max_lazy;
+@@ -550,6 +564,8 @@ local void fill_window()
+         memcpy((char*)window, (char*)window+WSIZE, (unsigned)WSIZE);
+         match_start -= WSIZE;
+         strstart    -= WSIZE; /* we now have strstart >= MAX_DIST: */
++        if (rsync_chunk_end != 0xFFFFFFFFUL)
++            rsync_chunk_end -= WSIZE;
+ 
+         block_start -= (long) WSIZE;
+ 
+@@ -577,13 +593,46 @@ local void fill_window()
+     }
+ }
+ 
++local void rsync_roll(start, num)
++    unsigned start;
++    unsigned num;
++{
++    unsigned i;
++
++    if (start < RSYNC_WIN) {
++       /* before window fills. */
++       for (i = start; i < RSYNC_WIN; i++) {
++           if (i == start + num) return;
++           rsync_sum += (ulg)window[i];
++       }
++       num -= (RSYNC_WIN - start);
++       start = RSYNC_WIN;
++    }
++
++    /* buffer after window full */
++    for (i = start; i < start+num; i++) {
++       /* New character in */
++       rsync_sum += (ulg)window[i];
++       /* Old character out */
++       rsync_sum -= (ulg)window[i - RSYNC_WIN];
++       if (rsync_chunk_end == 0xFFFFFFFFUL && RSYNC_SUM_MATCH(rsync_sum))
++           rsync_chunk_end = i;
++    }
++}
++
++/* ===========================================================================
++ * Set rsync_chunk_end if window sum matches magic value.
++ */
++#define RSYNC_ROLL(s, n) \
++   do { if (rsync) rsync_roll((s), (n)); } while(0)
++
+ /* ===========================================================================
+  * Flush the current block, with given end-of-file flag.
+  * IN assertion: strstart is set to the end of the current match.
+  */
+ #define FLUSH_BLOCK(eof) \
+    flush_block(block_start >= 0L ? (char*)&window[(unsigned)block_start] : \
+-                (char*)NULL, (long)strstart - block_start, (eof))
++                (char*)NULL, (long)strstart - block_start, flush-1, (eof)) 
+ 
+ /* ===========================================================================
+  * Processes a new input file and return its compressed length. This
+@@ -594,7 +643,7 @@ local void fill_window()
+ local off_t deflate_fast()
+ {
+     IPos hash_head; /* head of the hash chain */
+-    int flush;      /* set if current block must be flushed */
++    int flush;      /* set if current block must be flushed, 2=>and padded  */ 
+     unsigned match_length = 0;  /* length of best match */
+ 
+     prev_length = MIN_MATCH-1;
+@@ -624,6 +673,7 @@ local off_t deflate_fast()
+ 
+             lookahead -= match_length;
+ 
++	    RSYNC_ROLL(strstart, match_length); 
+ 	    /* Insert new strings in the hash table only if the match length
+              * is not too large. This saves time but degrades compression.
+              */
+@@ -652,9 +702,14 @@ local off_t deflate_fast()
+             /* No match, output a literal byte */
+             Tracevv((stderr,"%c",window[strstart]));
+             flush = ct_tally (0, window[strstart]);
++            RSYNC_ROLL(strstart, 1);
+             lookahead--;
+ 	    strstart++;
+         }
++	if (rsync && strstart > rsync_chunk_end) {                                                        
++            rsync_chunk_end = 0xFFFFFFFFUL;                                                               
++            flush = 2;                                                                                    
++        }  
+         if (flush) FLUSH_BLOCK(0), block_start = strstart;
+ 
+         /* Make sure that we always have enough lookahead, except
+@@ -728,6 +783,7 @@ off_t deflate()
+              */
+             lookahead -= prev_length-1;
+             prev_length -= 2;
++            RSYNC_ROLL(strstart, prev_length+1);
+             do {
+                 strstart++;
+                 INSERT_STRING(strstart, hash_head);
+@@ -740,24 +796,40 @@ off_t deflate()
+             match_available = 0;
+             match_length = MIN_MATCH-1;
+             strstart++;
+-            if (flush) FLUSH_BLOCK(0), block_start = strstart;
+ 
++            if (rsync && strstart > rsync_chunk_end) {
++                rsync_chunk_end = 0xFFFFFFFFUL;
++                flush = 2;
++            }
++            if (flush) FLUSH_BLOCK(0), block_start = strstart;
+         } else if (match_available) {
+             /* If there was no match at the previous position, output a
+              * single literal. If there was a match but the current match
+              * is longer, truncate the previous match to a single literal.
+              */
+             Tracevv((stderr,"%c",window[strstart-1]));
+-            if (ct_tally (0, window[strstart-1])) {
+-                FLUSH_BLOCK(0), block_start = strstart;
++            flush = ct_tally (0, window[strstart-1]);
++            if (rsync && strstart > rsync_chunk_end) {
++                rsync_chunk_end = 0xFFFFFFFFUL;
++                flush = 2;
+             }
++            if (flush) FLUSH_BLOCK(0), block_start = strstart;
++            RSYNC_ROLL(strstart, 1);
+             strstart++;
+             lookahead--;
+         } else {
+             /* There is no previous match to compare with, wait for
+              * the next step to decide.
+              */
++            if (rsync && strstart > rsync_chunk_end) {
++                /* Reset huffman tree */
++                rsync_chunk_end = 0xFFFFFFFFUL;
++                flush = 2;
++                FLUSH_BLOCK(0), block_start = strstart;
++            }             
++             
+             match_available = 1;
++            RSYNC_ROLL(strstart, 1);  
+             strstart++;
+             lookahead--;
+         }
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/doc/gzip.info gzip-1.3.12-src/doc/gzip.info
+--- gzip-1.3.12-orig/doc/gzip.info	2007-04-13 23:40:06.000000000 +0200
++++ gzip-1.3.12-src/doc/gzip.info	2007-04-14 08:23:15.921875000 +0200
+@@ -1,6 +1,7 @@
+-This is gzip.info, produced by makeinfo version 4.8 from gzip.texi.
++This is ../../gzip-1.3.12-src/doc/gzip.info, produced by makeinfo
++version 4.8 from ../../gzip-1.3.12-src/doc/gzip.texi.
+ 
+-   This manual is for Gzip (version 1.3.12, 5 February 2007), and
++   This manual is for Gzip (version 1.3.12, 3 April 2007), and
+ documents commands for compressing and decompressing data.
+ 
+    Copyright (C) 1998, 1999, 2001, 2002, 2006, 2007 Free Software
+@@ -31,8 +32,8 @@ File: gzip.info,  Node: Top,  Next: Over
+ Compressing Files
+ *****************
+ 
+-This manual is for Gzip (version 1.3.12, 5 February 2007), and
+-documents commands for compressing and decompressing data.
++This manual is for Gzip (version 1.3.12, 3 April 2007), and documents
++commands for compressing and decompressing data.
+ 
+    Copyright (C) 1998, 1999, 2001, 2002, 2006, 2007 Free Software
+ Foundation, Inc.
+@@ -315,6 +316,15 @@ The format for running the `gzip' progra
+      descend into the directory and compress all the files it finds
+      there (or decompress them in the case of `gunzip').
+ 
++`--rsyncable'
++     While compressing, synchronize the output occasionally based on the
++     input.  This reduces compression by about 1 percent most cases, but
++     means that the `rsync' program can take advantage of similarities
++     in the uncompressed input when syncronizing two files compressed
++     with this flag.  `gunzip' cannot tell the difference between a
++     compressed file created with this option, and one created without
++     it.
++
+ `--suffix SUF'
+ `-S SUF'
+      Use suffix SUF instead of `.gz'.  Any suffix can be given, but
+@@ -920,16 +930,16 @@ Appendix B Concept Index
+ 
+ 
+ Tag Table:
+-Node: Top1018
+-Node: Overview2164
+-Node: Sample7362
+-Node: Invoking gzip9298
+-Node: Advanced usage14290
+-Node: Environment15877
+-Node: Tapes16442
+-Node: Problems17459
+-Node: Copying This Manual17918
+-Node: GNU Free Documentation License18156
+-Node: Concept Index40552
++Node: Top1067
++Node: Overview2210
++Node: Sample7408
++Node: Invoking gzip9344
++Node: Advanced usage14786
++Node: Environment16373
++Node: Tapes16938
++Node: Problems17955
++Node: Copying This Manual18414
++Node: GNU Free Documentation License18652
++Node: Concept Index41048
+ 
+ End Tag Table
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/doc/gzip.texi gzip-1.3.12-src/doc/gzip.texi
+--- gzip-1.3.12-orig/doc/gzip.texi	2007-02-05 23:29:04.000000000 +0100
++++ gzip-1.3.12-src/doc/gzip.texi	2007-04-14 08:16:44.984375000 +0200
+@@ -350,6 +350,14 @@ specified on the command line are direct
+ into the directory and compress all the files it finds there (or
+ decompress them in the case of @command{gunzip}).
+ 
++@item --rsyncable
++While compressing, synchronize the output occasionally based on the
++input.  This reduces compression by about 1 percent most cases, but
++means that the @code{rsync} program can take advantage of similarities
++in the uncompressed input when syncronizing two files compressed with
++this flag.  @code{gunzip} cannot tell the difference between a
++compressed file created with this option, and one created without it.
++
+ @item --suffix @var{suf}
+ @itemx -S @var{suf}
+ Use suffix @var{suf} instead of @samp{.gz}.  Any suffix can be
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/doc/stamp-vti gzip-1.3.12-src/doc/stamp-vti
+--- gzip-1.3.12-orig/doc/stamp-vti	2007-04-13 23:40:01.000000000 +0200
++++ gzip-1.3.12-src/doc/stamp-vti	2007-04-14 08:16:45.000000000 +0200
+@@ -1,4 +1,4 @@
+-@set UPDATED 5 February 2007
+-@set UPDATED-MONTH February 2007
++@set UPDATED 3 April 2007
++@set UPDATED-MONTH April 2007
+ @set EDITION 1.3.12
+ @set VERSION 1.3.12
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/doc/version.texi gzip-1.3.12-src/doc/version.texi
+--- gzip-1.3.12-orig/doc/version.texi	2007-04-13 23:40:01.000000000 +0200
++++ gzip-1.3.12-src/doc/version.texi	2007-04-14 08:16:45.000000000 +0200
+@@ -1,4 +1,4 @@
+-@set UPDATED 5 February 2007
+-@set UPDATED-MONTH February 2007
++@set UPDATED 3 April 2007
++@set UPDATED-MONTH April 2007
+ @set EDITION 1.3.12
+ @set VERSION 1.3.12
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/gzip.1 gzip-1.3.12-src/gzip.1
+--- gzip-1.3.12-orig/gzip.1	2006-12-08 18:45:37.000000000 +0100
++++ gzip-1.3.12-src/gzip.1	2007-06-23 12:02:46.968750000 +0200
+@@ -4,7 +4,7 @@ gzip, gunzip, zcat \- compress or expand
+ .SH SYNOPSIS
+ .ll +8
+ .B gzip
+-.RB [ " \-acdfhlLnNrtvV19 " ]
++.RB [ " \-acdfhklLnNrtvV19 " ]
+ .RB [ \-S\ suffix ]
+ [
+ .I "name \&..."
+@@ -12,7 +12,7 @@ gzip, gunzip, zcat \- compress or expand
+ .ll -8
+ .br
+ .B gunzip
+-.RB [ " \-acfhlLnNrtvV " ]
++.RB [ " \-acfhklLnNrtvV " ]
+ .RB [ \-S\ suffix ]
+ [
+ .I "name \&..."
+@@ -224,6 +224,9 @@ prompts to verify whether an existing fi
+ .B \-h --help
+ Display a help screen and quit.
+ .TP
++.B \-k --keep
++Keep (don't delete) input files during compression or decompression.
++.TP
+ .B \-l --list
+ For each compressed file, list the following fields:
+ 
+@@ -290,6 +293,15 @@ will descend into the directory and comp
+ .I gunzip
+ ).
+ .TP
++.B --rsyncable
++While compressing, synchronize the output occasionally based on the input.
++This increases size by less than 1 percent most cases, but means that the
++.BR rsync (1)
++program can much more efficiently synchronize files compressed with this flag.
++.I gunzip
++cannot tell the difference between a compressed file created with this option,
++and one created without it.
++.TP
+ .B \-S .suf   --suffix .suf
+ Use suffix .suf instead of .gz. Any suffix can be given, but suffixes
+ other than .z and .gz should be avoided to avoid confusion when files
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/gzip.c gzip-1.3.12-src/gzip.c
+--- gzip-1.3.12-orig/gzip.c	2007-03-20 05:09:51.000000000 +0100
++++ gzip-1.3.12-src/gzip.c	2007-10-15 15:52:03.593750000 +0200
+@@ -170,7 +170,7 @@ static char rcsid[] = "$Id: gzip.c,v 1.1
+ DECLARE(uch, inbuf,  INBUFSIZ +INBUF_EXTRA);
+ DECLARE(uch, outbuf, OUTBUFSIZ+OUTBUF_EXTRA);
+ DECLARE(ush, d_buf,  DIST_BUFSIZE);
+-DECLARE(uch, window, 2L*WSIZE);
++DECLARE(uch, window, 2L*WSIZE + 4096);
+ #ifndef MAXSEG_64K
+     DECLARE(ush, tab_prefix, 1L<<BITS);
+ #else
+@@ -216,6 +216,8 @@ static sigset_t caught_signals;
+    suppresses a "Broken Pipe" message with some shells.  */
+ static int volatile exiting_signal;
+ 
++/* If nonzero, unlink input file on exit. */
++static int remove_ifname = 1;
+ /* If nonnegative, close this file descriptor and unlink ofname on error.  */
+ static int volatile remove_ofname_fd = -1;
+ 
+@@ -231,6 +233,7 @@ int  ofd;                  /* output fil
+ unsigned insize;           /* valid bytes in inbuf */
+ unsigned inptr;            /* index of next byte to be processed in inbuf */
+ unsigned outcnt;           /* bytes in output buffer */
++int rsync = 0;             /* make ryncable chunks */
+ 
+ struct option longopts[] =
+ {
+@@ -243,6 +246,7 @@ struct option longopts[] =
+  /* {"encrypt",    0, 0, 'e'},    encrypt */
+     {"force",      0, 0, 'f'}, /* force overwrite of output file */
+     {"help",       0, 0, 'h'}, /* give help */
++    {"keep",       0, 0, 'k'}, /* keep (don't delete) input files */
+  /* {"pkzip",      0, 0, 'k'},    force output in pkzip format */
+     {"list",       0, 0, 'l'}, /* list .gz file contents */
+     {"license",    0, 0, 'L'}, /* display software license */
+@@ -260,6 +264,7 @@ struct option longopts[] =
+     {"best",       0, 0, '9'}, /* compress better */
+     {"lzw",        0, 0, 'Z'}, /* make output compatible with old compress */
+     {"bits",       1, 0, 'b'}, /* max number of bits per code (implies -Z) */
++    {"rsyncable",  0, 0, 'R'}, /* make rsync-friendly archive */      
+     { 0, 0, 0, 0 }
+ };
+ 
+@@ -319,6 +324,7 @@ local void help()
+  "  -f, --force       force overwrite of output file and compress links",
+  "  -h, --help        give this help",
+ /*  -k, --pkzip       force output in pkzip format */
++ "  -k, --keep        keep (don't delete) input files",
+  "  -l, --list        list compressed file contents",
+  "  -L, --license     display software license",
+ #ifdef UNDOCUMENTED
+@@ -341,6 +347,7 @@ local void help()
+  "  -Z, --lzw         produce output compatible with old compress",
+  "  -b, --bits=BITS   max number of bits per code (implies -Z)",
+ #endif
++ "    --rsyncable   Make rsync-friendly archive",  
+  "",
+  "With no FILE, or when FILE is -, read standard input.",
+  "",
+@@ -423,7 +430,7 @@ int main (argc, argv)
+     z_suffix = Z_SUFFIX;
+     z_len = strlen(z_suffix);
+ 
+-    while ((optc = getopt_long (argc, argv, "ab:cdfhH?lLmMnNqrS:tvVZ123456789",
++    while ((optc = getopt_long (argc, argv, "ab:cdfhH?klLmMnNqrS:tvVZ123456789",
+ 				longopts, (int *)0)) != -1) {
+ 	switch (optc) {
+         case 'a':
+@@ -446,6 +453,8 @@ int main (argc, argv)
+ 	    force++; break;
+ 	case 'h': case 'H':
+ 	    help(); do_exit(OK); break;
++	case 'k':
++	    remove_ifname = 0; break;
+ 	case 'l':
+ 	    list = decompress = to_stdout = 1; break;
+ 	case 'L':
+@@ -469,6 +478,9 @@ int main (argc, argv)
+ 	    recursive = 1;
+ #endif
+ 	    break;
++
++        case 'R':
++	    rsync = 1; break;
+ 	case 'S':
+ #ifdef NO_MULTIPLE_DOTS
+             if (*optarg == '.') optarg++;
+@@ -536,7 +548,11 @@ int main (argc, argv)
+     ALLOC(ush, tab_prefix1, 1L<<(BITS-1));
+ #endif
+ 
++#ifdef SIGPIPE
+     exiting_signal = quiet ? SIGPIPE : 0;
++#else
++    exiting_signal = 0;
++#endif
+     install_signal_handlers ();
+ 
+     /* And get to work */
+@@ -825,7 +841,7 @@ local void treat_file(iname)
+     if (!to_stdout)
+       {
+ 	sigset_t oldset;
+-	int unlink_errno;
++	int unlink_errno = 0;
+ 
+ 	copy_stat (&istat);
+ 	if (close (ofd) != 0)
+@@ -833,6 +849,7 @@ local void treat_file(iname)
+ 
+ 	sigprocmask (SIG_BLOCK, &caught_signals, &oldset);
+ 	remove_ofname_fd = -1;
++	if (remove_ifname)
+ 	unlink_errno = xunlink (ifname) == 0 ? 0 : errno;
+ 	sigprocmask (SIG_SETMASK, &oldset, NULL);
+ 
+@@ -1013,6 +1030,11 @@ open_and_stat (char *name, int flags, mo
+ 	}
+     }
+ 
++#ifdef _WIN32
++	if S_ISDIR (st->st_mode)
++		return DIRFD;
++#endif /* _WIN32 */
++
+   fd = OPEN (name, flags, mode);
+   if (0 <= fd && fstat (fd, st) != 0)
+     {
+@@ -1637,7 +1659,7 @@ local void copy_stat(ifstat)
+ 	}
+       }
+ 
+-    if (futimens (ofd, ofname, timespec) != 0)
++    if (gl_futimens (ofd, ofname, timespec) != 0)
+       {
+ 	int e = errno;
+ 	WARN ((stderr, "%s: ", program_name));
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/gzip.h gzip-1.3.12-src/gzip.h
+--- gzip-1.3.12-orig/gzip.h	2007-03-20 05:09:51.000000000 +0100
++++ gzip-1.3.12-src/gzip.h	2007-04-14 08:18:49.609375000 +0200
+@@ -46,6 +46,9 @@
+  */
+ #include <stdio.h>
+ #include <sys/types.h> /* for off_t */
++#ifdef _WIN32
++# define off_t __int64
++#endif /* _WIN32 */
+ #include <time.h>
+ #if defined HAVE_STRING_H || defined STDC_HEADERS
+ #  include <string.h>
+@@ -158,6 +161,7 @@ EXTERN(uch, window);         /* Sliding 
+ extern unsigned insize; /* valid bytes in inbuf */
+ extern unsigned inptr;  /* index of next byte to be processed in inbuf */
+ extern unsigned outcnt; /* bytes in output buffer */
++extern int rsync;  /* deflate into rsyncable chunks */ 
+ 
+ extern off_t bytes_in;   /* number of input bytes */
+ extern off_t bytes_out;  /* number of output bytes */
+@@ -226,6 +230,8 @@ extern int save_orig_name; /* set if ori
+ #define get_byte()  (inptr < insize ? inbuf[inptr++] : fill_inbuf(0))
+ #define try_byte()  (inptr < insize ? inbuf[inptr++] : fill_inbuf(1))
+ 
++#define MIN(a,b) ((a) <= (b) ? (a) : (b)) 
++
+ /* put_byte is used for the compressed output, put_ubyte for the
+  * uncompressed output. However unlzw() uses window for its
+  * suffix table instead of its output buffer, so it does not use put_ubyte
+@@ -306,7 +312,7 @@ off_t deflate OF((void));
+         /* in trees.c */
+ void ct_init     OF((ush *attr, int *method));
+ int  ct_tally    OF((int dist, int lc));
+-off_t flush_block OF((char *buf, ulg stored_len, int eof));
++off_t flush_block OF((char *buf, ulg stored_len, int pad, int eof)); 
+ 
+         /* in bits.c */
+ void     bi_init    OF((file_t zipfile));
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/lib/dup-safer.c gzip-1.3.12-src/lib/dup-safer.c
+--- gzip-1.3.12-orig/lib/dup-safer.c	2007-01-14 11:32:10.000000000 +0100
++++ gzip-1.3.12-src/lib/dup-safer.c	2007-04-14 10:09:18.234375000 +0200
+@@ -32,6 +32,10 @@
+ /* Like dup, but do not return STDIN_FILENO, STDOUT_FILENO, or
+    STDERR_FILENO.  */
+ 
++#ifdef _WIN32
++#  define	dup			_dup
++#endif /* _WIN32 */
++
+ int
+ dup_safer (int fd)
+ {
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/lib/fd-safer.c gzip-1.3.12-src/lib/fd-safer.c
+--- gzip-1.3.12-orig/lib/fd-safer.c	2006-09-14 00:38:14.000000000 +0200
++++ gzip-1.3.12-src/lib/fd-safer.c	2007-04-14 10:05:43.937500000 +0200
+@@ -32,6 +32,10 @@
+ # define STDERR_FILENO 2
+ #endif
+ 
++#ifdef _WIN32
++#  define	close		_close
++#endif /* _WIN32 */
++
+ /* Return FD, unless FD would be a copy of standard input, output, or
+    error; in that case, return a duplicate of FD, closing FD.  On
+    failure to duplicate, close FD, set errno, and return -1.  Preserve
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/lib/open-safer.c gzip-1.3.12-src/lib/open-safer.c
+--- gzip-1.3.12-orig/lib/open-safer.c	2006-09-14 00:38:14.000000000 +0200
++++ gzip-1.3.12-src/lib/open-safer.c	2007-04-14 10:13:25.765625000 +0200
+@@ -26,6 +26,10 @@
+ #include <stdarg.h>
+ #include "unistd-safer.h"
+ 
++#ifdef _WIN32
++#  define	open		_open
++#endif /* _WIN32 */
++
+ int
+ open_safer (char const *file, int flags, ...)
+ {
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/lib/pipe-safer.c gzip-1.3.12-src/lib/pipe-safer.c
+--- gzip-1.3.12-orig/lib/pipe-safer.c	2006-09-14 00:38:14.000000000 +0200
++++ gzip-1.3.12-src/lib/pipe-safer.c	2007-04-14 10:05:58.968750000 +0200
+@@ -28,6 +28,10 @@
+    STDIN_FILENO, STDOUT_FILENO, or STDERR_FILENO.  Fail with ENOSYS on
+    platforms that lack pipe.  */
+ 
++#ifdef _WIN32
++#  define	close		_close
++#endif /* _WIN32 */
++
+ int
+ pipe_safer (int fd[2])
+ {
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/lib/utimens.c gzip-1.3.12-src/lib/utimens.c
+--- gzip-1.3.12-orig/lib/utimens.c	2007-01-18 08:33:34.000000000 +0100
++++ gzip-1.3.12-src/lib/utimens.c	2007-06-23 12:04:50.109375000 +0200
+@@ -34,6 +34,12 @@
+ # include <utime.h>
+ #endif
+ 
++#ifdef _WIN32
++#  define	utime		_utime
++#  define	dup			_dup
++#  define	close		_close
++#endif /* _WIN32 */
++
+ /* Some systems (even some that do have <utime.h>) don't declare this
+    structure anywhere.  */
+ #ifndef HAVE_STRUCT_UTIMBUF
+@@ -75,7 +81,7 @@ struct utimbuf
+    Return 0 on success, -1 (setting errno) on failure.  */
+ 
+ int
+-futimens (int fd ATTRIBUTE_UNUSED,
++gl_futimens (int fd ATTRIBUTE_UNUSED,
+ 	  char const *file, struct timespec const timespec[2])
+ {
+   /* Some Linux-based NFS clients are buggy, and mishandle time stamps
+@@ -185,5 +191,5 @@ futimens (int fd ATTRIBUTE_UNUSED,
+ int
+ utimens (char const *file, struct timespec const timespec[2])
+ {
+-  return futimens (-1, file, timespec);
++  return gl_futimens (-1, file, timespec);
+ }
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/lib/utimens.h gzip-1.3.12-src/lib/utimens.h
+--- gzip-1.3.12-orig/lib/utimens.h	2007-02-23 18:25:21.000000000 +0100
++++ gzip-1.3.12-src/lib/utimens.h	2007-06-23 12:04:50.125000000 +0200
+@@ -1,3 +1,3 @@
+ #include <time.h>
+-int futimens (int, char const *, struct timespec const [2]);
++int gl_futimens (int, char const *, struct timespec const [2]);
+ int utimens (char const *, struct timespec const [2]);
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/tailor.h gzip-1.3.12-src/tailor.h
+--- gzip-1.3.12-orig/tailor.h	2006-12-07 06:58:13.000000000 +0100
++++ gzip-1.3.12-src/tailor.h	2007-10-15 15:52:49.328125000 +0200
+@@ -135,6 +135,30 @@
+ #    define casemap(c) tolow(c) /* Force file names to lower case */
+ #  endif
+ #  define OS_CODE  0x0b
++/* Alias the Windows _function to the POSIX equivalent. */
++#  define	chmod		_chmod
++#  define	close		_close
++#  define	dup			_dup
++#  define	isatty		_isatty
++#  define	open			_open
++#  define	read			_read
++#  define	setmode		_setmode
++#  define	unlink		_unlink
++#  define	utime		_utime
++#  define	write		_write
++#  undef stat
++#  undef _stat
++#  undef lstat
++#  undef fstat
++#  undef _fstat
++#  define stat        _stati64
++#  define _stat       _stati64
++#  define lstat       _stati64
++#  define fstat       _fstati64
++#  define _fstat       _fstati64
++#  define off_t       __int64
++#  include <stdint.h>
++#  define DIRFD	INT32_MAX;
+ #endif
+ 
+ #ifdef MSDOS
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/trees.c gzip-1.3.12-src/trees.c
+--- gzip-1.3.12-orig/trees.c	2006-11-20 08:40:33.000000000 +0100
++++ gzip-1.3.12-src/trees.c	2007-04-14 08:16:45.078125000 +0200
+@@ -860,9 +860,10 @@ local void send_all_trees(lcodes, dcodes
+  * trees or store, and output the encoded block to the zip file. This function
+  * returns the total compressed length for the file so far.
+  */
+-off_t flush_block(buf, stored_len, eof)
++off_t flush_block(buf, stored_len, pad, eof)  
+     char *buf;        /* input block, or NULL if too old */
+     ulg stored_len;   /* length of input block */
++    int pad;          /* pad output to byte boundary */ 
+     int eof;          /* true if this is the last block for a file */
+ {
+     ulg opt_lenb, static_lenb; /* opt_len and static_len in bytes */
+@@ -955,6 +956,10 @@ off_t flush_block(buf, stored_len, eof)
+         Assert (input_len == bytes_in, "bad input size");
+         bi_windup();
+         compressed_len += 7;  /* align on byte boundary */
++    } else if (pad && (compressed_len % 8) != 0) {
++        send_bits((STORED_BLOCK<<1)+eof, 3);  /* send block type */
++        compressed_len = (compressed_len + 3 + 7) & ~7L;
++        copy_block(buf, 0, 1); /* with header */
+     }
+ 
+     return compressed_len >> 3;
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/unlzh.c gzip-1.3.12-src/unlzh.c
+--- gzip-1.3.12-orig/unlzh.c	2006-11-20 08:40:34.000000000 +0100
++++ gzip-1.3.12-src/unlzh.c	2007-04-14 08:16:45.093750000 +0200
+@@ -145,13 +145,17 @@ local void make_table(nchar, bitlen, tab
+     unsigned i, k, len, ch, jutbits, avail, nextcode, mask;
+ 
+     for (i = 1; i <= 16; i++) count[i] = 0;
+-    for (i = 0; i < (unsigned)nchar; i++) count[bitlen[i]]++;
++    for (i = 0; i < (unsigned)nchar; i++) {
++        if (bitlen[i] > 16)
++        error("Bad table (case a)\n");
++        else count[bitlen[i]]++;
++    }
+ 
+     start[1] = 0;
+     for (i = 1; i <= 16; i++)
+ 	start[i + 1] = start[i] + (count[i] << (16 - i));
+-    if ((start[17] & 0xffff) != 0)
+-      gzip_error ("Bad table\n");
++    if ((start[17] & 0xffff) != 0 || tablebits > 16) /* 16 for weight below */
++      error("Bad table (case b)\n"); 
+ 
+     jutbits = 16 - tablebits;
+     for (i = 1; i <= (unsigned)tablebits; i++) {
+@@ -165,15 +169,15 @@ local void make_table(nchar, bitlen, tab
+ 
+     i = start[tablebits + 1] >> jutbits;
+     if (i != 0) {
+-	k = 1 << tablebits;
+-	while (i != k) table[i++] = 0;
++        k = MIN(1 << tablebits, DIST_BUFSIZE);
++        while (i < k) table[i++] = 0;
+     }
+ 
+     avail = nchar;
+     mask = (unsigned) 1 << (15 - tablebits);
+     for (ch = 0; ch < (unsigned)nchar; ch++) {
+ 	if ((len = bitlen[ch]) == 0) continue;
+-	nextcode = start[len] + weight[len];
++	nextcode = MIN(start[len] + weight[len], DIST_BUFSIZE);
+ 	if (len <= (unsigned)tablebits) {
+ 	    if ((unsigned) 1 << tablebits < nextcode)
+ 	      gzip_error ("Bad table\n");
+@@ -193,7 +197,7 @@ local void make_table(nchar, bitlen, tab
+ 	    }
+ 	    *p = ch;
+ 	}
+-	start[len] = nextcode;
++	start[len] = start[len] + weight[len];
+     }
+ }
+ 
+@@ -216,7 +220,7 @@ local void read_pt_len(nn, nbit, i_speci
+ 	for (i = 0; i < 256; i++) pt_table[i] = c;
+     } else {
+ 	i = 0;
+-	while (i < n) {
++	while (i < MIN(n,NPT)) {
+ 	    c = bitbuf >> (BITBUFSIZ - 3);
+ 	    if (c == 7) {
+ 		mask = (unsigned) 1 << (BITBUFSIZ - 1 - 3);
+@@ -228,7 +232,7 @@ local void read_pt_len(nn, nbit, i_speci
+ 	    pt_len[i++] = c;
+ 	    if (i == i_special) {
+ 		c = getbits(2);
+-		while (--c >= 0) pt_len[i++] = 0;
++		while (--c >= 0 && i < NPT) pt_len[i++] = 0; 
+ 	    }
+ 	}
+ 	while (i < nn) pt_len[i++] = 0;
+@@ -248,7 +252,7 @@ local void read_c_len()
+ 	for (i = 0; i < 4096; i++) c_table[i] = c;
+     } else {
+ 	i = 0;
+-	while (i < n) {
++	while (i < MIN(n,NC)) { 
+ 	    c = pt_table[bitbuf >> (BITBUFSIZ - 8)];
+ 	    if (c >= NT) {
+ 		mask = (unsigned) 1 << (BITBUFSIZ - 1 - 8);
+@@ -256,14 +260,14 @@ local void read_c_len()
+ 		    if (bitbuf & mask) c = right[c];
+ 		    else               c = left [c];
+ 		    mask >>= 1;
+-		} while (c >= NT);
++		} while (c >= NT && (mask || c != left[c]));
+ 	    }
+ 	    fillbuf((int) pt_len[c]);
+ 	    if (c <= 2) {
+ 		if      (c == 0) c = 1;
+ 		else if (c == 1) c = getbits(4) + 3;
+ 		else             c = getbits(CBIT) + 20;
+-		while (--c >= 0) c_len[i++] = 0;
++		while (--c >= 0 && i < NC) c_len[i++] = 0; 
+ 	    } else c_len[i++] = c - 2;
+ 	}
+ 	while (i < NC) c_len[i++] = 0;
+@@ -292,7 +296,7 @@ local unsigned decode_c()
+ 	    if (bitbuf & mask) j = right[j];
+ 	    else               j = left [j];
+ 	    mask >>= 1;
+-	} while (j >= NC);
++	} while (j >= NC && (mask || j != left[j])); 
+     }
+     fillbuf((int) c_len[j]);
+     return j;
+@@ -309,7 +313,7 @@ local unsigned decode_p()
+ 	    if (bitbuf & mask) j = right[j];
+ 	    else               j = left [j];
+ 	    mask >>= 1;
+-	} while (j >= NP);
++	} while (j >= NP && (mask || j != left[j]));
+     }
+     fillbuf((int) pt_len[j]);
+     if (j != 0) j = ((unsigned) 1 << (j - 1)) + getbits((int) (j - 1));
+@@ -356,7 +360,7 @@ local unsigned decode(count, buffer)
+     while (--j >= 0) {
+ 	buffer[r] = buffer[i];
+ 	i = (i + 1) & (DICSIZ - 1);
+-	if (++r == count) return r;
++	if (++r >= count) return r;
+     }
+     for ( ; ; ) {
+ 	c = decode_c();
+@@ -366,14 +370,14 @@ local unsigned decode(count, buffer)
+ 	}
+ 	if (c <= UCHAR_MAX) {
+ 	    buffer[r] = c;
+-	    if (++r == count) return r;
++	    if (++r >= count) return r;
+ 	} else {
+ 	    j = c - (UCHAR_MAX + 1 - THRESHOLD);
+ 	    i = (r - decode_p() - 1) & (DICSIZ - 1);
+ 	    while (--j >= 0) {
+ 		buffer[r] = buffer[i];
+ 		i = (i + 1) & (DICSIZ - 1);
+-		if (++r == count) return r;
++		if (++r >= count) return r;
+ 	    }
+ 	}
+     }
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/unlzw.c gzip-1.3.12-src/unlzw.c
+--- gzip-1.3.12-orig/unlzw.c	2006-12-11 18:54:39.000000000 +0100
++++ gzip-1.3.12-src/unlzw.c	2007-10-14 17:16:28.640625000 +0200
+@@ -12,7 +12,6 @@ static char rcsid[] = "$Id: unlzw.c,v 1.
+ #endif
+ 
+ #include <config.h>
+-#include "tailor.h"
+ 
+ #ifdef HAVE_UNISTD_H
+ #  include <unistd.h>
+@@ -21,6 +20,7 @@ static char rcsid[] = "$Id: unlzw.c,v 1.
+ #  include <fcntl.h>
+ #endif
+ 
++#include "tailor.h"
+ #include "gzip.h"
+ #include "lzw.h"
+ 
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/unpack.c gzip-1.3.12-src/unpack.c
+--- gzip-1.3.12-orig/unpack.c	2006-11-20 08:40:34.000000000 +0100
++++ gzip-1.3.12-src/unpack.c	2007-04-14 08:16:45.109375000 +0200
+@@ -26,9 +26,6 @@ static char rcsid[] = "$Id: unpack.c,v 1
+ #include "gzip.h"
+ #include "crypt.h"
+ 
+-#define MIN(a,b) ((a) <= (b) ? (a) : (b))
+-/* The arguments must not have side effects. */
+-
+ #define MAX_BITLEN 25
+ /* Maximum length of Huffman codes. (Minor modifications to the code
+  * would be needed to support 32 bits codes, but pack never generates
+@@ -150,7 +147,7 @@ local void read_tree()
+ 	/* Remember where the literals of this length start in literal[] : */
+ 	lit_base[len] = base;
+ 	/* And read the literals: */
+-	for (n = leaves[len]; n > 0; n--) {
++	for (n = leaves[len]; n > 0 && base < LITERALS; n--) {
+ 	    literal[base++] = (uch)get_byte();
+ 	}
+     }
+@@ -186,7 +183,7 @@ local void build_tree()
+     prefixp = &prefix_len[1<<peek_bits];
+     for (len = 1; len <= peek_bits; len++) {
+ 	int prefixes = leaves[len] << (peek_bits-len); /* may be 0 */
+-	while (prefixes--) *--prefixp = (uch)len;
++	while (prefixes-- && prefixp > prefix_len) *--prefixp = (uch)len;
+     }
+     /* The length of all other codes is unknown: */
+     while (prefixp > prefix_len) *--prefixp = 0;
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/util.c gzip-1.3.12-src/util.c
+--- gzip-1.3.12-orig/util.c	2006-12-11 18:54:39.000000000 +0100
++++ gzip-1.3.12-src/util.c	2007-10-14 17:16:51.890625000 +0200
+@@ -26,7 +26,6 @@ static char rcsid[] = "$Id: util.c,v 1.6
+ #include <ctype.h>
+ #include <errno.h>
+ 
+-#include "tailor.h"
+ 
+ #ifdef HAVE_LIMITS_H
+ #  include <limits.h>
+@@ -44,6 +43,7 @@ static char rcsid[] = "$Id: util.c,v 1.6
+    extern int errno;
+ #endif
+ 
++#include "tailor.h"
+ #include "gzip.h"
+ #include "crypt.h"
+ #include <xalloc.h>
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/zforce.in gzip-1.3.12-src/zforce.in
+--- gzip-1.3.12-orig/zforce.in	2007-02-05 20:54:26.000000000 +0100
++++ gzip-1.3.12-src/zforce.in	2007-04-14 08:16:45.109375000 +0200
+@@ -40,7 +40,7 @@ not compress them twice.
+ Report bugs to <bug-gzip@gnu.org>."
+ 
+ if test $# = 0; then
+-  echo "$usage"
++  echo "$usage" >&2
+   exit 1
+ fi
+ 
+@@ -58,7 +58,7 @@ for i do
+     continue
+   fi
+ 
+-  if gzip -lv < "$i" 2>/dev/null | grep '^defl' > /dev/null; then
++  if gzip -l < "$i" 2>/dev/null | grep '^compressed' > /dev/null; then
+ 
+     new="$i.gz"
+     if mv "$i" "$new"; then
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/zgrep.in gzip-1.3.12-src/zgrep.in
+--- gzip-1.3.12-orig/zgrep.in	2007-02-05 20:54:26.000000000 +0100
++++ gzip-1.3.12-src/zgrep.in	2007-04-14 08:16:45.125000000 +0200
+@@ -140,7 +140,7 @@ fi
+ 
+ exec 3>&1
+ res=0
+-
++trap break SIGPIPE
+ for i
+ do
+   # Fail if gzip or grep (or sed) fails.
+@@ -184,5 +184,8 @@ do
+   r=$?
+   test "$gzip_status" -eq 0 || test "$gzip_status" -eq 2 || r=2
+   test $res -lt $r && res=$r
++  # SIGPIPE + 128
++  test "$r" -eq 141 && exit $res 
+ done
++trap - SIGPIPE
+ exit $res
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/zip.c gzip-1.3.12-src/zip.c
+--- gzip-1.3.12-orig/zip.c	2007-03-20 05:09:51.000000000 +0100
++++ gzip-1.3.12-src/zip.c	2007-10-14 17:17:19.140625000 +0200
+@@ -24,10 +24,6 @@ static char rcsid[] = "$Id: zip.c,v 1.7 
+ #include <config.h>
+ #include <ctype.h>
+ 
+-#include "tailor.h"
+-#include "gzip.h"
+-#include "crypt.h"
+-
+ #ifdef HAVE_UNISTD_H
+ #  include <unistd.h>
+ #endif
+@@ -35,6 +31,10 @@ static char rcsid[] = "$Id: zip.c,v 1.7 
+ #  include <fcntl.h>
+ #endif
+ 
++#include "tailor.h"
++#include "gzip.h"
++#include "crypt.h"
++
+ local ulg crc;       /* crc on uncompressed file data */
+ off_t header_bytes;   /* number of bytes in gzip header */
+ 
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/zless.1 gzip-1.3.12-src/zless.1
+--- gzip-1.3.12-orig/zless.1	2007-02-05 20:54:26.000000000 +0100
++++ gzip-1.3.12-src/zless.1	2007-04-14 08:16:45.140625000 +0200
+@@ -8,15 +8,17 @@ zless \- file perusal filter for crt vie
+ .I  Zless
+ is a filter which allows examination of compressed or plain text files
+ one screenful at a time on a soft-copy terminal.  It is the equivalent of
+-setting the environment variable LESSOPEN to '|gzip -cdfq -- %s',
+-and the environment variable LESSMETACHARS to
+-'<space><tab><newline>;*?"()<>[|&^`#\$%=~',
++setting the environment variable LESSOPEN to "|gzip -cdfq -- %s",
+ and then running
+ .IR less .
+ However, enough people seem to think that having the
+ command
+ .I zless
+ available is important to be worth providing it.
++
++Note that zless does not work with files piped to it on stdin, it only works
++with files specified as arguments.  If you really want to use less in a pipe,
++then do the uncompress explicitly and pipe to less instead of zless.
+ .SH "SEE ALSO"
+ zmore(1), less(1)
+ .SH "BUGS"
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/zmore.in gzip-1.3.12-src/zmore.in
+--- gzip-1.3.12-orig/zmore.in	2007-02-05 20:54:26.000000000 +0100
++++ gzip-1.3.12-src/zmore.in	2007-04-14 08:16:45.171875000 +0200
+@@ -53,7 +53,7 @@ fi
+ 
+ if test $# = 0; then
+     if test -t 0; then
+-	echo "$usage"
++	echo "$usage" >&2
+     else
+ 	gzip -cdfq | eval ${PAGER-more}
+     fi
+@@ -66,7 +66,7 @@ else
+ 	--v*) exec echo "$version";;
+ 	esac
+ 
+-	< "$FILE" || continue
++       if test -e $FILE || test -e $FILE.gz; then 
+ 	if test $FIRST -eq 0; then
+ 		echo $n1 "--More--(Next file: $FILE)$n2"
+ 		stty $cb -echo 2>/dev/null
+@@ -84,5 +84,7 @@ else
+ 	if test -t 1; then
+ 		FIRST=0
+ 	fi
++       else < $FILE                                                                                                       
++       fi 
+     done
+ fi
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' gzip-1.3.12-orig/znew.in gzip-1.3.12-src/znew.in
+--- gzip-1.3.12-orig/znew.in	2007-03-30 00:38:48.000000000 +0200
++++ gzip-1.3.12-src/znew.in	2007-06-23 12:08:14.703125000 +0200
+@@ -55,28 +55,27 @@ block=1024
+ # block is the disk block size (best guess, need not be exact)
+ 
+ warn="(does not preserve modes and timestamp)"
+-tmp=${TMPDIR-/tmp}/zfoo.$$
+-set -C
+-echo hi > $tmp || exit
+-if test -z "`(${CPMOD-cpmod} $tmp $tmp) 2>&1`"; then
+-  cpmod=${CPMOD-cpmod}
++cpmod= 
++cpmodarg= 
++if type ${CPMOD:-cpmod} 2>/dev/null; then 
++  cpmod=${CPMOD:-cpmod} 
+   warn=""
+ fi
+ 
+-if test -z "$cpmod" && ${TOUCH-touch} -r $tmp $tmp 2>/dev/null; then
+-  cpmod="${TOUCH-touch}"
++if test -z "$cpmod"; then 
++  cpmod=touch 
+   cpmodarg="-r"
+   warn="(does not preserve file modes)"
+ fi
+ 
+-# check if GZIP env. variable uses -S or --suffix
+-gzip -q $tmp
+-ext=`echo $tmp* | sed "s|$tmp||"`
+-rm -f $tmp*
+-if test -z "$ext"; then
+-  echo znew: error determining gzip extension
+-  exit 1
+-fi
++case "$GZIP" in                                                                  
++  *-S*) ext=`echo "$GZIP" | sed 's/^.*-S[[:space:]]*\([^[:space:]]*\).*$/\1/'`   
++       ;;                                                                        
++  *-suffix*) ext=`echo "$GZIP" | sed 's/^.*--suffix=\([^[:space:]]*\).*$/\1/'`   
++       ;;                                                                        
++  *) ext='.gz'                                                                   
++       ;;                                                                        
++esac  
+ if test "$ext" = ".Z"; then
+   echo znew: cannot use .Z as gzip extension.
+   exit 1
+@@ -93,7 +92,7 @@ do
+ done
+ 
+ if test $# -eq 0; then
+-  echo "$usage"
++  echo "$usage" >&2
+   exit 1
+ fi
+ 

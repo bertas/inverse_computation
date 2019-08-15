@@ -1,0 +1,587 @@
+% compiler: GNU Prolog 1.4.2
+% file    : main.pl
+
+
+file_name('/home/yufeijiang/Dropbox/security thursday/multilingual obfuscation/babel/evaluation/matrix_mult/CIL/translation/main.pl').
+
+
+predicate(main/3,5,static,private,monofile,global,1).
+
+
+clause(:-(main(A,B,_),','(is(C,1),','(;(','(=\=(A,19),','(write('need 2 3*3 interger matrices'),nl)),nl),','(is(D,0),','(oneouterloop(D,C,_,E,B,[],_,F),','(write(F),','(nl,','(write(E),','(nl,','(is(G,0),','(oneouterloop(G,E,_,_,B,[],_,H),','(write(H),','(is(I,0),','(calculate_out_loop(I,F,H,[],_,J),','(write(J),','(nl,','(is(K,0),pr(K,J)))))))))))))))))),[
+    allocate(11),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    put_variable(y(2),0),
+    put_integer(1,1),
+    call((is)/2),
+    put_value(y(0),0),
+    call(('$main/3_$aux1')/1),
+    put_variable(y(3),0),
+    put_integer(0,1),
+    call((is)/2),
+    put_value(y(3),0),
+    put_value(y(2),1),
+    put_void(2),
+    put_variable(y(4),3),
+    put_value(y(1),4),
+    put_nil(5),
+    put_void(6),
+    put_variable(y(5),7),
+    call((oneouterloop)/8),
+    put_value(y(5),0),
+    call((write)/1),
+    call((nl)/0),
+    put_value(y(4),0),
+    call((write)/1),
+    call((nl)/0),
+    put_variable(y(6),0),
+    put_integer(0,1),
+    call((is)/2),
+    put_value(y(6),0),
+    put_value(y(4),1),
+    put_void(2),
+    put_void(3),
+    put_value(y(1),4),
+    put_nil(5),
+    put_void(6),
+    put_variable(y(7),7),
+    call((oneouterloop)/8),
+    put_value(y(7),0),
+    call((write)/1),
+    put_variable(y(8),0),
+    put_integer(0,1),
+    call((is)/2),
+    put_value(y(8),0),
+    put_value(y(5),1),
+    put_value(y(7),2),
+    put_nil(3),
+    put_void(4),
+    put_variable(y(9),5),
+    call((calculate_out_loop)/6),
+    put_value(y(9),0),
+    call((write)/1),
+    call((nl)/0),
+    put_variable(y(10),0),
+    put_integer(0,1),
+    call((is)/2),
+    put_unsafe_value(y(10),0),
+    put_unsafe_value(y(9),1),
+    deallocate,
+    execute((pr)/2)]).
+
+
+predicate('$main/3_$aux1'/1,5,static,private,monofile,local,2).
+
+
+clause(:-('$main/3_$aux1'(A),','(=\=(A,19),','(write('need 2 3*3 interger matrices'),nl))),[
+    allocate(0),
+    put_integer(19,1),
+    call((=\=)/2),
+    put_atom('need 2 3*3 interger matrices',0),
+    call((write)/1),
+    deallocate,
+    execute((nl)/0)]).
+
+
+clause(:-('$main/3_$aux1'(_),nl),[
+    execute((nl)/0)]).
+
+
+predicate(pr/2,8,static,private,monofile,global,2).
+
+
+clause(:-(pr(A,B),','(<(A,3),','(is(C,0),','(prline(A,C,B),','(is(D,+(A,1)),pr(D,B)))))),[
+    allocate(4),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    put_value(y(0),0),
+    put_integer(3,1),
+    call((<)/2),
+    put_variable(y(2),0),
+    put_integer(0,1),
+    call((is)/2),
+    put_value(y(0),0),
+    put_value(y(2),1),
+    put_value(y(1),2),
+    call((prline)/3),
+    put_variable(y(3),0),
+    put_structure((+)/2,1),
+    unify_local_value(y(0)),
+    unify_integer(1),
+    call((is)/2),
+    put_unsafe_value(y(3),0),
+    put_value(y(1),1),
+    deallocate,
+    execute((pr)/2)]).
+
+
+clause(:-(pr(A,_),\+(<(A,3))),[
+    get_variable(x(1),0),
+    put_structure((<)/2,0),
+    unify_local_value(x(1)),
+    unify_integer(3),
+    execute((\+)/1)]).
+
+
+predicate(prline/3,12,static,private,monofile,global,2).
+
+
+clause(:-(prline(A,B,C),','(<(B,3),','(is(D,+(+(*(A,3),B),1)),','(nth(D,C,E),','(write(E),','(write(' '),','(is(F,+(B,1)),prline(A,F,C)))))))),[
+    allocate(6),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    get_variable(y(2),2),
+    put_value(y(1),0),
+    put_integer(3,1),
+    call((<)/2),
+    put_variable(y(3),0),
+    put_structure((*)/2,1),
+    unify_local_value(y(0)),
+    unify_integer(3),
+    put_structure((+)/2,2),
+    unify_value(x(1)),
+    unify_local_value(y(1)),
+    put_structure((+)/2,1),
+    unify_value(x(2)),
+    unify_integer(1),
+    call((is)/2),
+    put_value(y(3),0),
+    put_value(y(2),1),
+    put_variable(y(4),2),
+    call((nth)/3),
+    put_value(y(4),0),
+    call((write)/1),
+    put_atom(' ',0),
+    call((write)/1),
+    put_variable(y(5),0),
+    put_structure((+)/2,1),
+    unify_local_value(y(1)),
+    unify_integer(1),
+    call((is)/2),
+    put_value(y(0),0),
+    put_unsafe_value(y(5),1),
+    put_value(y(2),2),
+    deallocate,
+    execute((prline)/3)]).
+
+
+clause(:-(prline(_,A,_),','(\+(<(A,3)),nl)),[
+    allocate(0),
+    put_structure((<)/2,0),
+    unify_local_value(x(1)),
+    unify_integer(3),
+    call((\+)/1),
+    deallocate,
+    execute((nl)/0)]).
+
+
+predicate(oneouterloop/8,15,static,private,monofile,global,2).
+
+
+clause(:-(oneouterloop(A,B,C,D,E,F,G,H),','(<(A,3),','(is(I,0),','(oneinnerloop(I,B,C,E,F,G),','(is(J,+(A,1)),oneouterloop(J,C,_,D,E,G,_,H)))))),[
+    allocate(10),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    get_variable(y(2),2),
+    get_variable(y(3),3),
+    get_variable(y(4),4),
+    get_variable(y(5),5),
+    get_variable(y(6),6),
+    get_variable(y(7),7),
+    put_value(y(0),0),
+    put_integer(3,1),
+    call((<)/2),
+    put_variable(y(8),0),
+    put_integer(0,1),
+    call((is)/2),
+    put_value(y(8),0),
+    put_value(y(1),1),
+    put_value(y(2),2),
+    put_value(y(4),3),
+    put_value(y(5),4),
+    put_value(y(6),5),
+    call((oneinnerloop)/6),
+    put_variable(y(9),0),
+    put_structure((+)/2,1),
+    unify_local_value(y(0)),
+    unify_integer(1),
+    call((is)/2),
+    put_unsafe_value(y(9),0),
+    put_value(y(2),1),
+    put_void(2),
+    put_value(y(3),3),
+    put_value(y(4),4),
+    put_value(y(6),5),
+    put_void(6),
+    put_value(y(7),7),
+    deallocate,
+    execute((oneouterloop)/8)]).
+
+
+clause(:-(oneouterloop(A,B,_,C,_,D,E,F),','(\+(<(A,3)),','(append(D,[],E),','(append(D,[],F),is(C,B))))),[
+    allocate(5),
+    get_variable(y(0),1),
+    get_variable(y(1),3),
+    get_variable(y(2),5),
+    get_variable(y(3),6),
+    get_variable(y(4),7),
+    get_variable(x(1),0),
+    put_structure((<)/2,0),
+    unify_local_value(x(1)),
+    unify_integer(3),
+    call((\+)/1),
+    put_value(y(2),0),
+    put_nil(1),
+    put_value(y(3),2),
+    call((append)/3),
+    put_value(y(2),0),
+    put_nil(1),
+    put_value(y(4),2),
+    call((append)/3),
+    put_value(y(1),0),
+    put_value(y(0),1),
+    deallocate,
+    execute((is)/2)]).
+
+
+predicate(oneinnerloop/6,19,static,private,monofile,global,2).
+
+
+clause(:-(oneinnerloop(A,B,C,D,E,F),','(<(A,3),','(is(G,B),','(is(H,+(B,1)),','(is(I,+(D,*(G,4))),','(ptr_dereference(I,J),','(write(J),','(nl,','(append(E,'.'(J,[]),K),','(is(L,+(A,1)),oneinnerloop(L,H,C,D,K,F))))))))))),[
+    allocate(12),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    get_variable(y(2),2),
+    get_variable(y(3),3),
+    get_variable(y(4),4),
+    get_variable(y(5),5),
+    put_value(y(0),0),
+    put_integer(3,1),
+    call((<)/2),
+    put_variable(y(6),0),
+    put_value(y(1),1),
+    call((is)/2),
+    put_variable(y(7),0),
+    put_structure((+)/2,1),
+    unify_local_value(y(1)),
+    unify_integer(1),
+    call((is)/2),
+    put_variable(y(8),0),
+    put_structure((+)/2,1),
+    unify_local_value(y(3)),
+    unify_structure((*)/2),
+    unify_local_value(y(6)),
+    unify_integer(4),
+    call((is)/2),
+    put_value(y(8),0),
+    put_variable(y(9),1),
+    call((ptr_dereference)/2),
+    put_value(y(9),0),
+    call((write)/1),
+    call((nl)/0),
+    put_value(y(4),0),
+    put_list(1),
+    unify_local_value(y(9)),
+    unify_nil,
+    put_variable(y(10),2),
+    call((append)/3),
+    put_variable(y(11),0),
+    put_structure((+)/2,1),
+    unify_local_value(y(0)),
+    unify_integer(1),
+    call((is)/2),
+    put_unsafe_value(y(11),0),
+    put_unsafe_value(y(7),1),
+    put_value(y(2),2),
+    put_value(y(3),3),
+    put_unsafe_value(y(10),4),
+    put_value(y(5),5),
+    deallocate,
+    execute((oneinnerloop)/6)]).
+
+
+clause(:-(oneinnerloop(A,B,C,_,D,E),','(\+(<(A,3)),','(is(C,B),append(D,[],E)))),[
+    allocate(4),
+    get_variable(y(0),1),
+    get_variable(y(1),2),
+    get_variable(y(2),4),
+    get_variable(y(3),5),
+    get_variable(x(1),0),
+    put_structure((<)/2,0),
+    unify_local_value(x(1)),
+    unify_integer(3),
+    call((\+)/1),
+    put_value(y(1),0),
+    put_value(y(0),1),
+    call((is)/2),
+    put_value(y(2),0),
+    put_nil(1),
+    put_value(y(3),2),
+    deallocate,
+    execute((append)/3)]).
+
+
+predicate(calculate_out_loop/6,27,static,private,monofile,global,2).
+
+
+clause(:-(calculate_out_loop(A,B,C,D,E,F),','(<(A,3),','(is(G,0),','(calculate_middle_loop(A,G,B,C,D,E),','(is(H,+(A,1)),calculate_out_loop(H,B,C,E,_,F)))))),[
+    allocate(8),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    get_variable(y(2),2),
+    get_variable(y(3),3),
+    get_variable(y(4),4),
+    get_variable(y(5),5),
+    put_value(y(0),0),
+    put_integer(3,1),
+    call((<)/2),
+    put_variable(y(6),0),
+    put_integer(0,1),
+    call((is)/2),
+    put_value(y(0),0),
+    put_value(y(6),1),
+    put_value(y(1),2),
+    put_value(y(2),3),
+    put_value(y(3),4),
+    put_value(y(4),5),
+    call((calculate_middle_loop)/6),
+    put_variable(y(7),0),
+    put_structure((+)/2,1),
+    unify_local_value(y(0)),
+    unify_integer(1),
+    call((is)/2),
+    put_unsafe_value(y(7),0),
+    put_value(y(1),1),
+    put_value(y(2),2),
+    put_value(y(4),3),
+    put_void(4),
+    put_value(y(5),5),
+    deallocate,
+    execute((calculate_out_loop)/6)]).
+
+
+clause(:-(calculate_out_loop(A,_,_,B,_,C),','(\+(<(A,3)),append(B,[],C))),[
+    allocate(2),
+    get_variable(y(0),3),
+    get_variable(y(1),5),
+    get_variable(x(1),0),
+    put_structure((<)/2,0),
+    unify_local_value(x(1)),
+    unify_integer(3),
+    call((\+)/1),
+    put_value(y(0),0),
+    put_nil(1),
+    put_value(y(1),2),
+    deallocate,
+    execute((append)/3)]).
+
+
+predicate(calculate_middle_loop/6,30,static,private,monofile,global,2).
+
+
+clause(:-(calculate_middle_loop(A,B,C,D,E,F),','(<(B,3),','(is(G,0),','(calculate_inner_loop(A,B,G,C,D,0,_,H),','(append(E,'.'(H,[]),I),','(is(J,+(B,1)),calculate_middle_loop(A,J,C,D,I,F))))))),[
+    allocate(10),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    get_variable(y(2),2),
+    get_variable(y(3),3),
+    get_variable(y(4),4),
+    get_variable(y(5),5),
+    put_value(y(1),0),
+    put_integer(3,1),
+    call((<)/2),
+    put_variable(y(6),0),
+    put_integer(0,1),
+    call((is)/2),
+    put_value(y(0),0),
+    put_value(y(1),1),
+    put_value(y(6),2),
+    put_value(y(2),3),
+    put_value(y(3),4),
+    put_integer(0,5),
+    put_void(6),
+    put_variable(y(7),7),
+    call((calculate_inner_loop)/8),
+    put_value(y(4),0),
+    put_list(1),
+    unify_local_value(y(7)),
+    unify_nil,
+    put_variable(y(8),2),
+    call((append)/3),
+    put_variable(y(9),0),
+    put_structure((+)/2,1),
+    unify_local_value(y(1)),
+    unify_integer(1),
+    call((is)/2),
+    put_value(y(0),0),
+    put_unsafe_value(y(9),1),
+    put_value(y(2),2),
+    put_value(y(3),3),
+    put_unsafe_value(y(8),4),
+    put_value(y(5),5),
+    deallocate,
+    execute((calculate_middle_loop)/6)]).
+
+
+clause(:-(calculate_middle_loop(_,A,_,_,B,C),','(\+(<(A,3)),append(B,[],C))),[
+    allocate(2),
+    get_variable(y(0),4),
+    get_variable(y(1),5),
+    put_structure((<)/2,0),
+    unify_local_value(x(1)),
+    unify_integer(3),
+    call((\+)/1),
+    put_value(y(0),0),
+    put_nil(1),
+    put_value(y(1),2),
+    deallocate,
+    execute((append)/3)]).
+
+
+predicate(calculate_inner_loop/8,35,static,private,monofile,global,2).
+
+
+clause(:-(calculate_inner_loop(A,B,C,D,E,F,G,H),','(<(C,3),','(is(I,+(+(*(A,3),C),1)),','(is(J,+(+(*(C,3),B),1)),','(write(J),','(nl,','(nth(I,D,K),','(nth(J,E,L),','(is(M,*(K,L)),','(is(G,+(F,M)),','(is(N,+(C,1)),calculate_inner_loop(A,B,N,D,E,G,_,H)))))))))))),[
+    allocate(14),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    get_variable(y(2),2),
+    get_variable(y(3),3),
+    get_variable(y(4),4),
+    get_variable(y(5),5),
+    get_variable(y(6),6),
+    get_variable(y(7),7),
+    put_value(y(2),0),
+    put_integer(3,1),
+    call((<)/2),
+    put_variable(y(8),0),
+    put_structure((*)/2,1),
+    unify_local_value(y(0)),
+    unify_integer(3),
+    put_structure((+)/2,2),
+    unify_value(x(1)),
+    unify_local_value(y(2)),
+    put_structure((+)/2,1),
+    unify_value(x(2)),
+    unify_integer(1),
+    call((is)/2),
+    put_variable(y(9),0),
+    put_structure((*)/2,1),
+    unify_local_value(y(2)),
+    unify_integer(3),
+    put_structure((+)/2,2),
+    unify_value(x(1)),
+    unify_local_value(y(1)),
+    put_structure((+)/2,1),
+    unify_value(x(2)),
+    unify_integer(1),
+    call((is)/2),
+    put_value(y(9),0),
+    call((write)/1),
+    call((nl)/0),
+    put_value(y(8),0),
+    put_value(y(3),1),
+    put_variable(y(10),2),
+    call((nth)/3),
+    put_value(y(9),0),
+    put_value(y(4),1),
+    put_variable(y(11),2),
+    call((nth)/3),
+    put_variable(y(12),0),
+    put_structure((*)/2,1),
+    unify_local_value(y(10)),
+    unify_local_value(y(11)),
+    call((is)/2),
+    put_value(y(6),0),
+    put_structure((+)/2,1),
+    unify_local_value(y(5)),
+    unify_local_value(y(12)),
+    call((is)/2),
+    put_variable(y(13),0),
+    put_structure((+)/2,1),
+    unify_local_value(y(2)),
+    unify_integer(1),
+    call((is)/2),
+    put_value(y(0),0),
+    put_value(y(1),1),
+    put_unsafe_value(y(13),2),
+    put_value(y(3),3),
+    put_value(y(4),4),
+    put_value(y(6),5),
+    put_void(6),
+    put_value(y(7),7),
+    deallocate,
+    execute((calculate_inner_loop)/8)]).
+
+
+clause(:-(calculate_inner_loop(_,_,A,_,_,B,_,C),','(\+(<(A,3)),is(C,B))),[
+    allocate(2),
+    get_variable(y(0),5),
+    get_variable(y(1),7),
+    put_structure((<)/2,0),
+    unify_local_value(x(2)),
+    unify_integer(3),
+    call((\+)/1),
+    put_value(y(1),0),
+    put_value(y(0),1),
+    deallocate,
+    execute((is)/2)]).
+
+
+predicate(test/1,46,static,private,monofile,global,1).
+
+
+clause(:-(test(A),','(append(A,'.'(1,'.'(2,'.'(3,[]))),B),','(append(B,[],_),nl))),[
+    allocate(1),
+    put_list(1),
+    unify_integer(1),
+    unify_list,
+    unify_integer(2),
+    unify_list,
+    unify_integer(3),
+    unify_nil,
+    put_variable(y(0),2),
+    call((append)/3),
+    put_value(y(0),0),
+    put_nil(1),
+    put_void(2),
+    call((append)/3),
+    deallocate,
+    execute((nl)/0)]).
+
+
+predicate(test2/2,47,static,private,monofile,global,1).
+
+
+clause(:-(test2(A,B),','(is(C,+(A,4)),','(ptr_dereference(A,B),ptr_dereference(C,_)))),[
+    allocate(3),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    put_variable(y(2),0),
+    put_structure((+)/2,1),
+    unify_local_value(y(0)),
+    unify_integer(4),
+    call((is)/2),
+    put_value(y(0),0),
+    put_value(y(1),1),
+    call((ptr_dereference)/2),
+    put_unsafe_value(y(2),0),
+    put_void(1),
+    deallocate,
+    execute((ptr_dereference)/2)]).
+
+
+predicate(test3/1,48,static,private,monofile,global,1).
+
+
+clause(:-(test3(A),strlen_wrapper(A,_)),[
+    put_void(1),
+    execute((strlen_wrapper)/2)]).
+
+
+predicate(ptr_dereference/2,50,static,private,monofile,global,1).
+
+
+clause(ptr_dereference(_,_),[
+    proceed]).

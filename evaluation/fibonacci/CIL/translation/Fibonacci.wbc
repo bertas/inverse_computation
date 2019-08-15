@@ -1,0 +1,80 @@
+% compiler: GNU Prolog 1.4.2
+% file    : Fibonacci.pl
+
+
+file_name('/home/yufeijiang/Dropbox/security thursday/multilingual obfuscation/babel/evaluation/fibonacci/CIL/translation/Fibonacci.pl').
+
+
+predicate(fibonacci/2,1,static,private,monofile,global,1).
+
+
+clause(:-(fibonacci(A,B),','(is(_,0),ifone(A,B))),[
+    allocate(2),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    put_void(0),
+    put_integer(0,1),
+    call((is)/2),
+    put_value(y(0),0),
+    put_value(y(1),1),
+    deallocate,
+    execute((ifone)/2)]).
+
+
+predicate(ifone/2,3,static,private,monofile,global,2).
+
+
+clause(:-(ifone(A,B),','(=(A,1),=(B,1))),[
+    get_integer(1,0),
+    get_integer(1,1),
+    proceed]).
+
+
+clause(:-(ifone(A,B),','(\=(A,1),iftwo(A,B))),[
+    allocate(2),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    put_value(y(0),0),
+    put_integer(1,1),
+    call((\=)/2),
+    put_value(y(0),0),
+    put_value(y(1),1),
+    deallocate,
+    execute((iftwo)/2)]).
+
+
+predicate(iftwo/2,6,static,private,monofile,global,2).
+
+
+clause(:-(iftwo(A,B),','(=(A,2),=(B,1))),[
+    get_integer(2,0),
+    get_integer(1,1),
+    proceed]).
+
+
+clause(:-(iftwo(A,B),','(is(C,-(A,1)),','(fibonacci(C,D),','(is(E,-(A,2)),','(fibonacci(E,F),is(B,+(D,F))))))),[
+    allocate(6),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    put_variable(y(2),0),
+    put_structure((-)/2,1),
+    unify_local_value(y(0)),
+    unify_integer(1),
+    call((is)/2),
+    put_value(y(2),0),
+    put_variable(y(3),1),
+    call((fibonacci)/2),
+    put_variable(y(4),0),
+    put_structure((-)/2,1),
+    unify_local_value(y(0)),
+    unify_integer(2),
+    call((is)/2),
+    put_value(y(4),0),
+    put_variable(y(5),1),
+    call((fibonacci)/2),
+    put_value(y(1),0),
+    put_structure((+)/2,1),
+    unify_local_value(y(3)),
+    unify_local_value(y(5)),
+    deallocate,
+    execute((is)/2)]).

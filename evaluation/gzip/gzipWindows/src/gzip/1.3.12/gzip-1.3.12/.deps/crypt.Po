@@ -1,0 +1,1 @@
+crypt.o crypt.o: ../gzip-1.3.12-src/crypt.c

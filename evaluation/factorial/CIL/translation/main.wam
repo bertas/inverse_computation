@@ -1,0 +1,104 @@
+% compiler: GNU Prolog 1.4.2
+% file    : main.pl
+
+
+file_name('/home/yufeijiang/Dropbox/security thursday/multilingual obfuscation/babel/evaluation/factorial/CIL/translation/main.pl').
+
+
+predicate(test/2,5,static,private,monofile,global,[
+    execute(atoi_wrapper/2)]).
+
+
+predicate(test2/2,6,static,private,monofile,global,[
+    execute(strlen_wrapper/2)]).
+
+
+predicate(main/2,8,static,private,monofile,global,[
+    allocate(3),
+    get_variable(y(0),0),
+    get_variable(y(1),1),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[is,2]),
+    put_integer(1,2),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[is,2]),
+    put_integer(1,0),
+    put_value(y(0),1),
+    put_variable(y(2),3),
+    call(loop/4),
+    put_value(y(0),0),
+    call(write/1),
+    put_atom('! is ',0),
+    call(write/1),
+    put_value(y(2),0),
+    call(write/1),
+    call(nl/0),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[is,2]),
+    put_integer(0,0),
+    get_value(y(1),0),
+    deallocate,
+    proceed]).
+
+
+predicate(loop/4,10,static,private,monofile,global,[
+    try_me_else(1),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[=<,2]),
+    math_load_value(x(0),4),
+    math_load_value(x(1),5),
+    call_c('Pl_Blt_Lte',[fast_call,boolean],[x(4),x(5)]),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[is,2]),
+    math_load_value(x(2),2),
+    math_load_value(x(0),4),
+    call_c('Pl_Fct_Mul',[fast_call,x(2)],[x(2),x(4)]),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[is,2]),
+    math_load_value(x(0),0),
+    call_c('Pl_Fct_Inc',[fast_call,x(0)],[x(0)]),
+    execute(loop/4),
+
+label(1),
+    trust_me_else_fail,
+    allocate(2),
+    get_variable(y(0),2),
+    get_variable(y(1),3),
+    get_variable(x(2),0),
+    put_structure((=<)/2,0),
+    unify_local_value(x(2)),
+    unify_local_value(x(1)),
+    call((\+)/1),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[is,2]),
+    math_load_value(y(0),0),
+    get_value(y(1),0),
+    deallocate,
+    proceed]).
+
+
+predicate(debug/3,13,static,private,monofile,global,[
+    allocate(2),
+    get_variable(y(0),1),
+    get_variable(y(1),2),
+    call(write/1),
+    call(nl/0),
+    put_value(y(0),0),
+    call(write/1),
+    call(nl/0),
+    call_c('Pl_Set_Bip_Name_Untagged_2',[by_value],[is,2]),
+    put_integer(0,0),
+    get_value(y(1),0),
+    deallocate,
+    proceed]).
+
+
+predicate(atoi_wrapper/2,1,static,private,monofile,global,[
+    foreign_call_c(atoi_wrapper,boolean,atoi_wrapper/2,-1,[(in,integer),(out,integer)]),
+    proceed]).
+
+
+predicate(str_pointer_dereference_wrapper/2,2,static,private,monofile,global,[
+    foreign_call_c(str_pointer_dereference_wrapper,boolean,str_pointer_dereference_wrapper/2,-1,[(in,positive),(out,string)]),
+    proceed]).
+
+
+predicate(strlen_wrapper/2,3,static,private,monofile,global,[
+    foreign_call_c(strlen_wrapper,boolean,strlen_wrapper/2,-1,[(in,string),(out,integer)]),
+    proceed]).
+
+
+ensure_linked(['$force_foreign_link'/0]).
