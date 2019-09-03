@@ -417,14 +417,14 @@ class babelAssign f =
       in
       aux^rname
 
-  method varList elist =
+  (*method varList elist =
       let count = ref (-1) 
       in
       let names = List.map (
                         fun v -> (count := !count + 1; "arg_"^(string_of_int !count))
                         ) elist 
       in
-        String.concat ", " names
+        String.concat ", " names*)
 
   method createCall fexp elist =
     let is_fp fn =
@@ -802,6 +802,88 @@ class babelAssign f =
     in
     (String.uppercase (e_str e1))^ (opcode_trans opcode) ^(String.uppercase (e_str e2))
 
+  method checkGoto b1 =
+    let l = List.length b1.bstmts in
+    if l = 1 then
+      let s = List.hd b1.bstmts in
+      match s.skind with
+      | Goto _ -> true
+      | _ -> false
+    else false
+
+  method printOption s =
+    match s with
+    | None -> ()
+    | Some stmt -> E.log "stmt option: %s\n" (e_str stmt)
+
+  method getAllVariablesInst i acc =
+    match i with
+    | Set(lval, exp, lc) ->
+        let varVisitor = object
+        inherit nopCilVisitor
+        val mutable vars : string list = []
+        method get_vars = vars
+        method vvrbl v = vars <- v.vname :: vars; DoChildren
+        end in
+          ignore(visitCilLval (varVisitor :> cilVisitor) lval);
+          ignore(visitCilExpr (varVisitor :> cilVisitor) exp);
+          varVisitor#get_vars@acc
+    | _ -> []
+
+  method getAllVariablesStmt varList s =
+    match s.skind with
+    |     Instr(l) -> List.fold_left (fun acc i -> self#getAllVariablesInst i acc) varList l
+    |     If (BinOp (op, e1, e2, ty), b1, b2, loc) ->
+      let varVisitor = object
+        inherit nopCilVisitor
+        val mutable vars : string list = []
+        method get_vars = vars
+        method vvrbl v = vars <- v.vname :: vars; DoChildren
+        end in
+          ignore(visitCilExpr (varVisitor :> cilVisitor) e1);
+          ignore(visitCilExpr (varVisitor :> cilVisitor) e2);
+          self#getAllVariablesBlk b1 varList;
+          self#getAllVariablesBlk b2 varList;
+          varVisitor#get_vars@varList
+    | Loop (b, loc, stmt1, stmt2) ->
+          self#getAllVariablesBlk b varList
+    | Block b ->
+          self#getAllVariablesBlk b varList
+    | Return (Some e, _) ->
+        let varVisitor = object
+        inherit nopCilVisitor
+        val mutable vars : string list = []
+        method get_vars = vars
+        method vvrbl v = vars <- v.vname :: vars; DoChildren
+        end in
+          ignore(visitCilExpr (varVisitor :> cilVisitor) e);
+          varVisitor#get_vars@varList
+    | _ -> varList
+
+  method getAllVariablesBlk b varList =
+    List.fold_left (fun acc s -> self#getAllVariablesStmt acc s) varList b.bstmts
+
+  method block_collector b loc =
+    let p = object
+      inherit nopCilVisitor
+      val mutable vars : varinfo list = []
+      method get_vars = List.map (fun v -> v.vname) vars
+      method vvrbl v =
+              if compareLoc v.vdecl loc > 0 || List.mem v vars
+              then  DoChildren
+              else
+              (
+                vars <- v :: vars;
+                DoChildren
+              )
+      end in
+        ignore(visitCilBlock (p :> cilVisitor) b);
+        p#get_vars
+
+  method printVariableList l =
+    let help var = E.log "variable in loop %s\n" var in
+    List.iter help l
+
   method trans_instr i =
     let arr_help lv =
       let split = Str.split (Str.regexp_string "[") in
@@ -811,10 +893,10 @@ class babelAssign f =
         let n0 = String.sub n' 0 (String.length n' - 2) in
         if Hashtbl.mem arrayTb n0 then n0
       else (print_endline n'; failwith "undefined array in arr_help")
-   in
-   let arr_index lv n =
-     let n' = lv_str lv in
-     String.sub n' (String.length n) 2
+    in
+    let arr_index lv n =
+      let n' = lv_str lv in
+      String.sub n' (String.length n) 2
     in
     let arr_help1 lv =
       let n = arr_help lv in
@@ -927,30 +1009,257 @@ class babelAssign f =
           | _ -> false
         )
     in
-  match i with
-    (*babelAssign definintion here*)
-    | Set (_ as lv, AddrOf rv, _) ->
+    match i with
+      (*babelAssign definintion here*)
+      | Set (_ as lv, AddrOf rv, _) ->
         ""
-    | Set (lv , e, _) ->
+      | Set (lv , e, _) ->
         self#babel_exp lv e
-    | Call (Some lv, e, elist, loc) ->
-       let fn = e_str e in
-         if self#has fn "babel_wrapper_" then
+      | Call (Some lv, e, elist, loc) ->
+        let fn = e_str e in
+          if self#has fn "babel_wrapper_" then
             ""
-         else if self#is_reusable_func = true && fn = func_name then
+          else if self#is_reusable_func = true && fn = func_name then
             self#mkPrologCall lv e elist
-         else
-           let pl = self#createPlInterface lv e elistin
-             self#insertInPlFile pl;
-             self#mkCall lv e elist
-    | Call (None, e, elist, loc) ->
-       let fn = e_str e in
-         if self#has fn "babel_wrapper_" then
+          else
+            let pl = self#createPlInterface lv e elist in
+            self#insertInPlFile pl;
+            self#mkCall lv e elist
+      | Call (None, e, elist, loc) ->
+        let fn = e_str e in
+          if self#has fn "babel_wrapper_" then
             ""
-         else if self#is_reusable_func = true && fn = func_name then
+          else if self#is_reusable_func = true && fn = func_name then
             self#mkPrologCallNoRet e elist
-         else
-          let pl = self#createPlInterfaceNoRet e elist in
+          else
+            let pl = self#createPlInterfaceNoRet e elist in
             self#insertInPlFile pl;
             self#mkCallNoRet e elist
-    | _ -> ""
+      | _ -> ""
+
+  method entry_loop varList =
+    let ssaVarSplit acc name =
+      let l = String.length name in
+      let count = int_of_string (String.sub name (l-2) 2)
+      and varName = String.sub name 0 (l-2) in
+        Hashtbl.add acc varName count; acc in
+    let tempTable = List.fold_left ssaVarSplit (Hashtbl.create 30) varList
+    and entryVars  = (Hashtbl.create 10) in
+      let findMin name count =
+        if Hashtbl.mem entryVars name then
+          let minCount = Hashtbl.find entryVars name in
+            Hashtbl.replace entryVars name (min count minCount)
+        else Hashtbl.add entryVars name count in
+      Hashtbl.iter findMin tempTable;
+      entryVars
+
+  method printEntryVarInLoop entryVarsTable =
+    let queue1 = Queue.create ()
+    and queue2 = Queue.create () in
+    let loopEntryPrint name count =
+      Queue.push ", " queue1;
+      Queue.push ((String.uppercase name)^(self#countToStr count)) queue1;
+      Queue.push (", Final"^(String.uppercase name)) queue2 in
+    let print varStr =
+      E.log "%s" varStr in
+    Hashtbl.iter loopEntryPrint entryVarsTable;
+    Queue.pop queue1;
+    E.log("\nloop_entry(");
+    Queue.iter print queue1;
+    Queue.iter print queue2;
+    E.log(") :- ")
+
+   method returnEntryVarInLoop entryVarsTable =
+    let queue1 = Queue.create ()
+    and queue2 = Queue.create () in
+    let loopEntryPrint name count =
+      Queue.push ", " queue1;
+      Queue.push ((String.uppercase name)^(self#countToStr count)) queue1;
+      Queue.push (", Final"^(String.uppercase name)) queue2 in
+        Hashtbl.iter loopEntryPrint entryVarsTable;
+        Queue.pop queue1;
+        let res1 = Queue.fold (^) "" queue1
+        and res2 = Queue.fold (^) "" queue2 in
+          "\nloop_entry_"^(string_of_int (Array.get whileCounts 0))^"("^res1^res2^") :- "
+
+  method findExitVarInLoop varList =
+  let ssaVarSplit acc name =
+    let l = String.length name in
+    let count = int_of_string (String.sub name (l-2) 2)
+    and varName = String.sub name 0 (l-2) in
+      Hashtbl.add acc varName count; acc in
+  let tempTable = List.fold_left ssaVarSplit (Hashtbl.create 30) varList
+  and entryVars  = (Hashtbl.create 10) in
+    let findMax name count =
+      if Hashtbl.mem entryVars name then
+        let maxCount = Hashtbl.find entryVars name in
+          Hashtbl.replace entryVars name (max count maxCount)
+      else Hashtbl.add entryVars name count in
+    Hashtbl.iter findMax tempTable;
+    entryVars
+
+  method printExitVarInLoop entryVarsTable =
+    let queue1 = Queue.create ()
+    and queue2 = Queue.create ()
+    and queue3 = Queue.create () in
+    let loopEntryPrint name count =
+      Queue.push ", " queue1;
+      Queue.push ((String.uppercase name)^(self#countToStr count)) queue1;
+      Queue.push (", Final"^(String.uppercase name)) queue2 in
+    let print varStr =
+      E.log "%s" varStr in
+    Hashtbl.iter loopEntryPrint entryVarsTable;
+    Queue.pop    queue1;
+    E.log("\nloop_entry(");
+    Queue.iter print queue1;
+    Queue.iter print queue2;
+    E.log ").\n";
+    E.log("\nloop_entry(");
+    Queue.iter print queue1;
+    E.log      ", ";
+    Queue.iter print queue1;
+    E.log      ").\n"
+
+  method returnExitVarInLoop entryVarsTable exitVarsTable =
+    let queue1 = Queue.create ()
+    and queue2 = Queue.create ()
+    and queue3 = Queue.create () in
+    let h1 name count =
+      print_string name;
+      print_int count;
+      Queue.push ", " queue1;
+      Queue.push ((String.uppercase name)^(self#countToStr count)) queue1;
+      Queue.push (", Final"^(String.uppercase name)) queue2
+    and h2 name count =
+      Queue.push ", " queue3;
+      Queue.push ((String.uppercase name)^(self#countToStr count)) queue3 in
+        Hashtbl.iter h1 exitVarsTable;
+        Hashtbl.iter h2 entryVarsTable;
+        Queue.pop queue1;
+        Queue.pop queue3;
+        let res1 = Queue.fold (^) " " queue1
+        and res2 = Queue.fold (^) " " queue2
+        and res3 = Queue.fold (^) " " queue3 in
+      "\nloop_entry_"^(string_of_int (Array.get whileCounts 0))^"("^res1^res2^").\nloop_entry_"^(string_of_int (Array.get whileCounts 0))^"("^res3^", "^res3^").\n"
+
+  method loopCall entryVarsTable exitVarsTable =
+    let queue = Queue.create () in
+    let helper name count queue =
+      Queue.push ", " queue;
+      Queue.push ((String.uppercase name)^(self#countToStr count)) queue in
+        Hashtbl.iter (fun name count -> helper name count queue) entryVarsTable;
+        Hashtbl.iter (fun name count -> helper name count queue) exitVarsTable;
+        Queue.pop queue;
+        let res1 = Queue.fold (^) "" queue in
+      "loop_entry_"^(string_of_int (Array.get whileCounts 0))^"("^res1^"),"
+
+  method countToStr count =
+    if count < 10 then "0"^(string_of_int count)
+    else string_of_int count
+
+  method mergeTopNonStack n =
+    let rec helper n =
+      if n = 0 then ""
+    else let code = prologWhiles#pop in
+      code^(helper (n-1)) in
+      helper n
+
+  method removeLastChar str =
+    let tempStr = String.trim str in
+    let len = String.length tempStr in
+      if len = 0 then ""
+      else if String.get tempStr (len-1) = ',' then String.sub tempStr 0 (len-1)
+    else tempStr
+
+  method vstmts s =
+    let s_str i =
+      Pretty.sprint max_int (Cil.d_stmt () i) in
+    let is_validate_ret e =
+      match remove_cast_on_exp e with
+        | Const _ -> true
+        | Lval _ -> true
+        | _ -> false
+    in
+    let construct_return_exp_const c =
+      if !returnName == "Void" then
+        begin
+        print_string !returnName;
+        failwith "undefined return"
+        end
+      else
+        begin
+          print_endline !returnName;
+          let v = c_str c in
+          (*"babelAssign(" ^ String.uppercase !returnName ^ "," ^ v ^ "), true"*)
+          String.uppercase !returnName ^ " is " ^ v ^ ", true"
+        end
+    in
+    let construct_return_exp_lval l =
+      if !returnName == "Void" then
+        begin
+        print_string !returnName;
+        failwith "undefined return"
+        end
+      else
+        begin
+          print_endline !returnName;
+          let v = lv_str l in
+          let vu = String.uppercase v in
+          let ru = String.uppercase !returnName in
+         (* "babelAssign(" ^ ru ^ "," ^ vu ^ "), true" *)
+          ru ^ " is " ^ vu ^ ", true"
+        end
+    in
+    let construct_return_exp e =
+      match remove_cast_on_exp e with
+        | Lval lv ->
+           construct_return_exp_lval lv
+        | Const c ->
+           construct_return_exp_const c
+        | _ ->  failwith "undefined return"
+    in
+    match s.skind with
+      | Instr (instrList) ->
+          let resList = List.map (fun instr -> self#trans_instr instr) instrList in
+            String.concat "\n" resList
+      | If (BinOp (op, e1, e2, ty), b1, b2, loc) ->
+          let condStr = self#mkCondStr op e1 e2 in
+          let check = self#checkGoto b2
+          and l = List.length b1.bstmts in
+          if check = true && l = 1 then
+            condStr^"-> !,"
+          else
+              let str1 = "\n("^condStr^" ->\n" in
+              let str2List = List.map (self#vstmts) b1.bstmts in
+                let str2 = self#removeLastChar (String.concat "" str2List) in
+              let str3List = List.map (self#vstmts) b2.bstmts in
+                let str3 = self#removeLastChar (String.concat "" str3List) in
+                if str3 = "" then
+                  str1^str2^"\n; true),\n"
+                else
+                  str1^str2^"\n; "^str3^"),\n"
+      | Loop (b, loc, stmt1, stmt2) ->
+        let strList = List.map (self#vstmts) b.bstmts in
+          let str = String.concat "" strList in
+        let varList = self#block_collector b loc in
+        let entryVars = self#entry_loop varList in
+        let entryStr = self#returnEntryVarInLoop entryVars in
+        let exitVars = self#findExitVarInLoop varList in
+          let exitStr = self#returnExitVarInLoop entryVars exitVars in
+          let loopStr = self#loopCall entryVars exitVars in
+          (Array.set whileCounts 0 ((Array.get whileCounts 0)+1));
+        prologWhiles#push (entryStr^str^exitStr);
+        loopStr
+      | Goto (stmt, loc) -> "!\n"
+      | Block b ->
+          let strList = List.map self#vstmts b.bstmts in
+            String.concat "\n" strList
+      | Return (Some e', _) when is_validate_ret e' ->
+         construct_return_exp e'
+     (* | Return (Some Lval(Var vi, _), _) -> "true " *)
+      | Return (None, _) -> returnName := "Void"; "true "
+      | Return _ -> failwith "undefined return"
+      | Break _ | Continue _ -> ""
+      | Switch _ -> failwith "undefined switch statement" (*CIL simplified C can not reach here*)
+      | TryFinally _ |TryExcept _ ->
+                       failwith "undefined try catch statement" (*C can not reach here*)
