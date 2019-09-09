@@ -1263,3 +1263,364 @@ class babelAssign f =
       | Switch _ -> failwith "undefined switch statement" (*CIL simplified C can not reach here*)
       | TryFinally _ |TryExcept _ ->
                        failwith "undefined try catch statement" (*C can not reach here*)
+
+  method func_wrap f =
+    let wrapper_decl = Printf.sprintf
+    "   %s babel_wrapper_%s(%s)                           // function name insert
+      {
+        // wrapper for function %s        // function name insert
+         %s return_value; //  return value type (how about array type)
+
+        //rountine code
+        int func;
+        PlTerm arg[%d];    //  function variable + return value insert
+        PlBool res;
+
+        func = Pl_Find_Atom(\"%s\"); // function name insert
+
+      //routine code
+        Pl_Query_Begin(PL_FALSE);
+
+      //prepare parameters
+      //partial routine code, pass in parameter  // we need to init arguments and return value
+      %s
+      //routine code, reserve a place for return value
+      %s
+
+      //partial routine code, 2 is not routine. (number of arguments) + 1
+        res = Pl_Query_Call(func, %d, arg);          // insert (variable+return value)
+
+      //get return value, partial routine code, 1 is not routine
+        return_value = %s(arg[%d]);        // insert ()
+
+      //routine code
+        Pl_Query_End(PL_KEEP_FOR_PROLOG);
+
+      //routine code
+        return %s;
+        }
+      "
+    in
+    let fn = f.svar.vname
+    and argsl = self#mem_var_collect f.slocals in
+    let argsl' = argsl@f.sformals in
+    let args = List.map self#singleArg1 argsl' in
+    let s = String.concat ", " args in
+    let len = (List.length argsl') + 1 in
+    let astr = self#getArgsStr argsl'
+    and t = self#getReturnType f in
+    let t1 = if t = "void " then "int" else t
+    and t2 = if t = "void " then "int" else t in
+    let r = self#get_ret_name t in
+    let rs = self#getReturnStr t (len - 1) in
+    let fn' = self#prolog_func_modify fn in
+    let ri =
+        match t with
+          | "float " | "double " -> "Pl_Rd_Float"
+          | _ -> "Pl_Rd_Integer"
+        in
+    wrapper_decl t1 fn s fn t2 len fn' astr rs len ri (len-1) r
+
+
+  (* prolog does not allow function name with upper case letter *)
+  method prolog_func_modify fn =
+    let i = String.get fn 0
+    and s = String.sub fn 1 (String.length fn - 1) in
+      let i' = Char.lowercase i in
+        let is =  String.make 1 i'  in
+          is^s
+
+  method get_ret_name t =
+    if t <> "void " then "return_value"
+    else "0"
+
+  method getArgsStr argsList =
+    let rec helper args i =
+      match args with
+      | h::t ->
+        let prologStr = self#ctype_translate h.vtype in
+        "arg["^(string_of_int i)^"] = "^prologStr^"("^h.vname^");\n"^(helper t (i+1))
+      | [] -> "" in
+      helper argsList 0
+
+  method getReturnStr returnType len =
+    if returnType <> "void"
+    then Printf.sprintf "arg[%d] = Pl_Mk_Variable();" len
+    else "// no return value"
+
+  method getReturnType func =
+  let (ret, _, _, _) = splitFunctionType func.svar.vtype in
+    Pretty.sprint max_int (d_type () ret)
+
+  method ctype_translate t =
+    match t with
+    | TInt (ik, _) ->
+      begin
+        match ik with
+        | IChar -> "Pl_Mk_Integer"
+        | IUChar -> "Pl_Mk_Byte"
+        | IBool -> "Pl_Mk_Boolean"
+        | IInt -> "Pl_Mk_Integer"
+        | IUInt -> "Pl_Mk_Positive"
+        | ILong -> "Pl_Mk_Integer"
+        | IULong -> "Pl_Mk_Integer"
+        | IULong -> "Pl_Mk_Integer"
+        | IULongLong -> "Pl_Mk_Integer"
+        | _ ->
+          let ts = t_str t in
+            failwith ("unhandled C int type "^ts)
+      end
+    | TFloat (fk, _) ->
+      begin
+        match fk with
+        | FFloat | FDouble -> "Pl_Mk_Float"
+        | _ -> "Pl_Mk_Float"
+      end
+    | TArray _ -> "Pl_Mk_List"
+    | TPtr _ -> "Pl_Mk_Integer"
+    | TNamed (t', _) ->
+        self#ctype_translate t'.ttype
+    | TEnum _ -> "Pl_Mk_Integer"
+    | _ -> "Pl_Mk_Integer"
+
+  method set_instrLine l i =
+    let loc = get_instrLoc i in
+      let loc' ={loc with line=l.line} in
+        match i with
+          Set(lv, e, loc) -> Set (lv, e, loc')
+          | _ -> failwith "unsupported type in set_instrLine"
+
+  method call_wrap func =
+    let help l i =
+      self#set_instrLine l i in
+    let blk = func.sbody in
+    let mem_instrs = self#mem_instr_collect func in
+    returnName := "BABEL_RET";
+    let n = "return babel_wrapper_"^func.svar.vname in
+    let argsl = (self#mem_var_collect func.slocals)@func.sformals in
+    let args_exp = List.map (fun v -> Lval(Var(v), NoOffset)) argsl in
+    let fun_var = copyVarinfo func.svar n in
+    let fun_val = Lval(var fun_var) in
+    let s = List.nth blk.bstmts 0 in
+    let last_l = get_stmtLoc s.skind in
+    let new_instrs = List.map (fun i -> help last_l i) mem_instrs
+    and new_l = {last_l with line=last_l.line} in
+    let call_i = Instr [Call(None, fun_val, args_exp, new_l)] in
+    let stmts' = (mkStmt call_i)::blk.bstmts in
+    (mkStmt (Instr new_instrs))::stmts'
+
+  method shouldSkipFunction f = hasAttribute "babel_skip" f.vattr
+  method babelTransFunction f = hasAttribute "babel_trans" f.vattr
+
+  method getReturnVarName f =
+    let isRet name =
+      let re = Str.regexp_string "__retres" in
+      try ignore (Str.search_forward re name 0); true
+      with Not_found -> false in
+    let l = List.filter (fun v -> isRet v.vname) f.slocals in
+    if List.length l = 0 then "0" else (List.hd l).vname
+
+  method getArgsStrProlog argsList =
+    let res = List.fold_left (fun acc info -> acc^", "^(String.uppercase info.vname)) "" argsList in
+    let res1 = String.trim res in
+      if res = "" then ""
+    else
+      String.sub res 2 ((String.length res)-2)
+
+  method getAllWhiles =
+    prologWhiles#str
+
+
+  method updateFunRet func =
+    let t = self#getReturnType func in
+      Hashtbl.replace funRet func.svar.vname t
+
+
+  method mkFunHead func args =
+    let fn = self#prolog_func_modify func.svar.vname in
+    if args = "" then
+      Printf.sprintf "\n%s(%s) :- \n" fn (String.uppercase !returnName)
+    else if !returnName = "VOID" then
+      Printf.sprintf "\n%s(%s) :- \n" fn args
+    else
+      Printf.sprintf "\n%s(%s, %s) :- \n" fn args (String.uppercase !returnName)
+
+    (* record the array info, supporting future transform *)
+  method array_filter func =
+    let is_ssa n =
+      try
+        let l = String.length n in
+        let p = String.sub n (l-2) 2 in
+          ignore(int_of_string p);
+          true
+      with
+        | _ -> false in
+    let h' n l =
+      if is_ssa n then ()
+      else (* this is not the ssa version of array name *)
+        Hashtbl.replace arrayTb n (int_of_string l) in
+    let h v =
+      match v.vtype with
+      | TArray (_, lo, _) ->
+          (match lo with None -> () | Some e -> (h' v.vname (e_str e)); ())
+      | _ -> () in
+      List.iter h func.slocals
+
+    (* init the arrays :
+     *  W = [0, 0, 0, 0, 0] when len_of_w = 5
+     *  *)
+  method array_init =
+    let rec m n l =
+      match n with
+      | 0 -> l
+      | _ -> m (n-1) ("0"::l) in
+    let h n l acc =
+      let h = (String.uppercase n)^" = "
+      and el = m l [] in
+        acc^h^"["^(String.concat "," el)^"],\n" in
+    Hashtbl.fold h arrayTb ""
+
+  (* some of the loop function (function name ended with _cil_lr_X) could be
+   *  directly reused in Prolog code (don't have to call C wrapper again),
+  *)
+  method is_reusable_func =
+    let is_loop = self#has func_name "_cil_lr_" in
+    if has_mem_instrs = false && is_loop = true then
+      true
+    else false
+
+    (* based on C-To-Prolog translate process,
+     * we must collect all the specified variables
+     * like
+     *   __cil_fp_b_ssa_1
+     *   __cil_pp_b_ssa_1
+     *   __cil_gp_stderr
+     *
+     *  in which `b` is the original variable name
+     *
+     *     *)
+  method mem_var_collect locals =
+    List.filter (
+                fun l ->
+                    (
+                      self#has l.vname "__cil_fp_" || self#has l.vname "__cil_pp_" || self#has l.vname "__cil_gp_"
+                    )
+                ) locals
+
+  method mem_instr_collect f =
+    let instrVisitor = object
+      (* overkill *)
+      inherit nopCilVisitor
+      val mutable instrs : instr list = []
+      val set_instrs = Hashtbl.create 10
+      method get_instrs = instrs
+      method vinst i =
+            match i with
+            | Set (lval, _, l) ->
+              begin
+                match lval with
+                | (Var v, _) ->
+                  if Hashtbl.mem set_instrs v.vname then SkipChildren
+                  else
+                    (
+                      if self#has v.vname "__cil_fp_" || self#has v.vname "__cil_pp_" || self#has v.vname "__cil_gp_" then
+                        (
+                          instrs <- i::instrs;
+                          Hashtbl.replace set_instrs v.vname 1;
+                          SkipChildren
+                        )
+                      else DoChildren
+                    )
+                | _ -> SkipChildren
+              end
+            | _ -> SkipChildren
+        end in
+          ignore(visitCilFunction (instrVisitor :> cilVisitor) f);
+          let il = instrVisitor#get_instrs in
+            if List.length il = 0 then
+              (
+                has_mem_instrs <- false;
+                il
+              )
+            else
+              (
+                has_mem_instrs <- true;
+                il
+              )
+
+  method return_variable_collect f =
+      let sVisitor = object
+        inherit nopCilVisitor
+        val mutable have_find: bool = false
+        method vstmt s =
+            match s.skind with
+            | _ when have_find -> SkipChildren
+            | Return (Some Lval(Var vi, _), _) ->
+               print_endline ("set return variable as : " ^ vi.vname);
+               returnName := vi.vname;
+               have_find <- true;
+               SkipChildren
+            | _ ->
+               begin
+                 DoChildren
+               end
+        end in
+      ignore(visitCilFunction (sVisitor :> cilVisitor) f)
+
+  method vfunc func  =
+      let insert_wrappers fw =
+        (* iterate f.gloals list, find the first function *)
+        let is_gfun g =
+          match g with
+          | GFun(_,_) -> true
+          | _ -> false
+        in
+        let rec aux gl =
+          match gl with
+          | (h::t) when is_gfun h ->
+             fw::h::t
+          | (h::t) -> h::(aux t)
+          | _ -> failwith "undefined global list"
+        in
+        f.globals <- aux f.globals
+      in
+      match func with
+      | func when List.mem func.svar.vname white_list ->
+         print_endline ("funcname : " ^ func.svar.vname);
+         print_endline ("================== start babel transform for function: "^func.svar.vname^" ==========");
+          func_name <- func.svar.vname;
+          let wrapper = self#func_wrap func in
+         (* f.globals <- f.globals @ [GText(wrapper)];*)
+          insert_wrappers (GText(wrapper));
+
+          func.sbody.bstmts <- self#call_wrap func;
+          (* self#array_filter func; *)
+          (* let arrInit = self#array_init in *)
+          self#updateFunRet func;
+
+          let funBodyList = List.map self#vstmts func.sbody.bstmts
+
+          and mem_vars = self#mem_var_collect func.slocals in
+
+          let args = self#getArgsStrProlog (mem_vars@func.sformals) in
+
+          let funHead = self#mkFunHead func args
+          and funBody = String.concat "" funBodyList
+          and whileStr = self#getAllWhiles
+          and oc = open_out_gen [Open_append; Open_creat] 0o666  "babel.pl"
+          in
+          let funBody1 = (self#removeLastChar funBody)^"." in
+          (* Printf.fprintf oc "%s\n%s\n %s \n\n %s" funHead arrInit funBody1 whileStr; *)
+          Printf.fprintf oc "%s\n%s\n %s \n\n %s" funHead "" funBody1 whileStr;
+          close_out oc;
+          print_endline ("================== finish babel transform for function: "^func.svar.vname^" ==========");
+          SkipChildren
+      | func ->
+         print_endline ("funcname : " ^ func.svar.vname);
+         self#updateFunRet func;
+         SkipChildren
+
+
+      initializer
+      white_list <- self#update_whitelist;
+    end
