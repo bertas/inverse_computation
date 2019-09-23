@@ -46,7 +46,7 @@ class normalizeConditionalsVisitor =
       		| _ -> false
   	in
 
-  	let negateCompareOp op =
+  let negateCompareOp op =
     	match op with
       		| Eq -> Ne  | Ne -> Eq
       		| Lt -> Ge  | Ge -> Lt
@@ -54,7 +54,7 @@ class normalizeConditionalsVisitor =
       		| _ -> invalid_arg "negateCompareOp"
   	in
 
-  	let rec mkPredicate e negated =
+  let rec mkPredicate e negated =
     	match e with
       		| UnOp (LNot, e, _) -> mkPredicate e (not negated)
 
