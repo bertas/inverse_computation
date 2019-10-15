@@ -1024,7 +1024,8 @@ object (self)
       let split = Str.split (Str.regexp_string "[") in
       let n = lv_str lv in
       let items = split n in
-        let n' = List.hd items in
+        (*let n' = List.nth items 0 in*)
+          let n' = List.hd items in
           let n0 = String.sub n' 0 (String.length n' - 2) in
         if Hashtbl.mem arrayTb n0 then n0
       else (print_string n; failwith "undefined array in arr_help")
@@ -1552,6 +1553,7 @@ object (self)
       let split = Str.split (Str.regexp_string "[") in
       let n = lv_str lv in
       let items = split n in
+        (*let n' = List.nth items 0 in*)
         let n' = List.hd items in
         let n0 = String.sub n' 0 (String.length n' - 2) in
         if Hashtbl.mem arrayTb n0 then n0
@@ -2275,6 +2277,7 @@ method func_wrap f =
       (* obviously, it is an ad-hoc but efficient way *)
       let fun_var = copyVarinfo func.svar n in
       let fun_val = Lval(var fun_var) in
+      (*let s = List.nth blk.bstmts 0 in*)
       let s = List.hd blk.bstmts in
       let last_l = get_stmtLoc s.skind in
       let new_instrs = List.map (fun i -> help last_l i) mem_instrs
@@ -2545,7 +2548,9 @@ let addBabelInitializer ?(main_name="main") (f: file) =
                  babelInitFunc.vattr <- [Attr ("babel_skip", [])];
                  let argslist = fdec.sformals in
                  let l = List.length argslist in
-                 let argc_var = List.nth argslist 0 in
+                 (*let argc_var = List.nth argslist 0 in*)
+                 (*if l > 0 then argc_var = List.hd arglist else argc_var = null in*)
+                 let argc_var = if l > 0 then List.hd argslist else List.hd argslist in
                  let argc_exp = Lval(Var(argc_var),NoOffset) in
                  let argv_var = List.nth argslist ((List.length argslist) - 1) in
                  let argv_exp = Lval(Var(argv_var),NoOffset) in
