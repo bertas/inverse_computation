@@ -297,7 +297,7 @@ class babelAssign f =
           bytesSizeOfInt ik
         | TPtr (t, _) ->
          !M.theMachine.M.sizeof_ptr
-        | TComp _ ->  8 
+        | TComp _ ->  8
         | TEnum _ ->  4
         | TFloat (fk, _) ->
           begin
@@ -312,7 +312,7 @@ class babelAssign f =
           bytesSizeOfInt ik
         | TPtr (t, _) ->
           size_m t
-        | TComp _ ->  8 
+        | TComp _ ->  8
         | TEnum _ ->  4
         | TFloat (fk, _) ->
           begin
@@ -1024,7 +1024,7 @@ object (self)
       let split = Str.split (Str.regexp_string "[") in
       let n = lv_str lv in
       let items = split n in
-        let n' = List.nth items 0 in
+        let n' = List.hd items in
           let n0 = String.sub n' 0 (String.length n' - 2) in
         if Hashtbl.mem arrayTb n0 then n0
       else (print_string n; failwith "undefined array in arr_help")
@@ -1428,7 +1428,7 @@ object (self)
           bytesSizeOfInt ik
         | TPtr (t, _) ->
          !M.theMachine.M.sizeof_ptr
-        | TComp _ ->  8 
+        | TComp _ ->  8
         | TEnum _ ->  4
         | TFloat (fk, _) ->
           begin
@@ -1443,7 +1443,7 @@ object (self)
           bytesSizeOfInt ik
         | TPtr (t, _) ->
           size_m t
-        | TComp _ ->  8 
+        | TComp _ ->  8
         | TEnum _ ->  4
         | TFloat (fk, _) ->
           begin
@@ -1552,7 +1552,7 @@ object (self)
       let split = Str.split (Str.regexp_string "[") in
       let n = lv_str lv in
       let items = split n in
-        let n' = List.nth items 0 in
+        let n' = List.hd items in
         let n0 = String.sub n' 0 (String.length n' - 2) in
         if Hashtbl.mem arrayTb n0 then n0
       else (print_endline n'; failwith "undefined array in arr_help")
@@ -2275,7 +2275,7 @@ method func_wrap f =
       (* obviously, it is an ad-hoc but efficient way *)
       let fun_var = copyVarinfo func.svar n in
       let fun_val = Lval(var fun_var) in
-      let s = List.nth blk.bstmts 0 in
+      let s = List.hd blk.bstmts in
       let last_l = get_stmtLoc s.skind in
       let new_instrs = List.map (fun i -> help last_l i) mem_instrs
       and new_l = {last_l with line=last_l.line} in
