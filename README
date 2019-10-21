@@ -1,1 +1,37 @@
+# How To Install and Use
+===========================
 
+## Installation
+1. Install OPAM (OCaml Package Manager).
+2. Compile and install the customized CIL (in folder cil/). You may need additional dependencies
+which can be installed through OPAM.
+3. Compile and install the customized GNU Prolog (in folder gprolog/).
+4. Compile the BABEL preprocessor (in folder preprocessor/). You may need additional dependencies
+which can be installed through OPAM.
+5. Compile the c-to-prolog translator (in folder babel/). An executable named "p2b" will be generated;
+copy this binary executable into the experiment folder (i.e., experiment/).
+
+## Usage
+1. Use `cpp` to preprocess the C file you want to obfuscate
+2. Send the preprocssed C file to the BABEL preprocessor. The output is another C file which can
+now be translated to Prolog. It is strongly recommended to test that this output C file does not
+break your original program before further translating it to Prolog.
+3. If the preprocessed C file works correctly, send it to the c-to-prolog translator. Copy the
+C file into the experiment folder, update "babel_funclist.txt" with the function names you want
+to translate, and then run script run.sh xxx.c (suppose xxx.c is the preprocessed C file).
+4. Compile everything together using the customized GNU Prolog (a sample makefile can be found in test_mcf/).
+
+## Test
+Some code are put in the test_mcf/ folder to help you quickly get started. Please follow the
+steps below to translate "implicit.c" in test_mcf/ folder. "mcf" is a test program from SPEC2006.
+
+1. Copy implicit.c from the test_mcf/ folder into preprocessor/.
+2. Copy the preprocessed output (i.e., implicit.c) into the experiment folder (experiment/).
+3. Copy the implicit_list.txt from test_mcf/ into experiment/.
+3. ./run.sh implicit.c in the experiment folder.
+4. Go to test_mcf/ and run ./do.sh. You should see compilation of the translated outputs and
+a bunch of tests.
+
+## Note
+This prototypical implementation has only been tested to obfuscate our benchmark programs. There
+may be potential bugs that prevent it from working correctly on other programs.

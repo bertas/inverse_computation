@@ -6,6 +6,7 @@ module E = Errormsg
 module M = Machdep
 
 exception Todo of string
+(*exception Failure of string*)
 
 let isSome o =
   match o with
@@ -95,6 +96,7 @@ let noAddr = zero
 let prependToBlock (is : instr list) (b : block) =
   b.bstmts <- mkStmt (Instr is) :: b.bstmts
 
+(*determines whether t is of type TPtr or not*)
 let isPtr t =
   match unrollType t with
   | TInt (ikind, _) -> (
@@ -105,7 +107,7 @@ let isPtr t =
   | TPtr(_, _) -> true
   | _ -> false
 
-  let isIntegral32Type t =
+let isIntegral32Type t =
   match unrollType t with
   | TInt (ikind, _) -> (
                        match ikind with
@@ -131,6 +133,7 @@ let argvType = TPtr(TPtr(charType, []),[])
 
 class normalizeConditionalsVisitor =
 
+  (*determines whether op is one of the arithmetic comparison operators*)
   let isCompareOp op =
     match op with
       | Eq -> true  | Ne -> true  | Lt -> true
@@ -138,6 +141,7 @@ class normalizeConditionalsVisitor =
       | _ -> false
   in
 
+  (*negates an arithmetic comparison operator*)
   let negateCompareOp op =
     match op with
       | Eq -> Ne  | Ne -> Eq
@@ -248,6 +252,7 @@ class babelAssign f =
         | _ -> 18
   in
 
+  (*CastE uses Cil.mkCast to make casts*)
   let toAddr e = CastE (addrType, e) in
 
   let toValue e =
@@ -290,6 +295,7 @@ class babelAssign f =
     with Not_found -> false
   in
 
+  (*calculates the size of expression e*)
   let e_size e =
     let rec size_v t =
         match unrollType t with
@@ -339,7 +345,7 @@ class babelAssign f =
         print_endline ts;
         if has1 ts "**" then false
         else true in
-      match e with
+    match e with
       | Lval (Var v, _) -> size_v v.vtype
       | Lval (Mem e, _) ->
          begin
@@ -359,10 +365,6 @@ class babelAssign f =
       | _ ->
          failwith "undefined size of exp"
   in
-
-
-
-
 
   let p_sizeof e =
     let rec size t =
@@ -395,13 +397,13 @@ class babelAssign f =
   let e_str e =
     let rec aux e =
       (* get rid of type cast *)
-    match e with
-    | CastE (t, e') ->
+      match e with
+      | CastE (t, e') ->
        aux e'
-    | Const c ->
-       begin
-         match c with
-         | CInt64 (i, k, l) ->
+      | Const c ->
+      begin
+        match c with
+        | CInt64 (i, k, l) ->
             begin
               match k with
                 | IULong -> Const (CInt64 (i, IInt, l))
@@ -409,14 +411,14 @@ class babelAssign f =
                 | ILong -> Const (CInt64 (i, IInt, l))
                 | _ -> e
             end
-         | _ -> e
-       end
-    (* for pointer arithmetic *)
-    | BinOp (op, e1, e2, t) when op == PlusPI ->
-       BinOp (op, aux e1, aux e2, t)
-    | BinOp (op, e1, e2, t) ->
-       BinOp (op, aux e1, aux e2, t)
-    | _ -> e
+        | _ -> e
+      end
+      (* for pointer arithmetic *)
+      | BinOp (op, e1, e2, t) when op == PlusPI ->
+        BinOp (op, aux e1, aux e2, t)
+      | BinOp (op, e1, e2, t) ->
+        BinOp (op, aux e1, aux e2, t)
+      | _ -> e
     in
     match e with
     | SizeOf _ | SizeOfE _ -> string_of_int (p_sizeof e)
@@ -438,7 +440,6 @@ class babelAssign f =
   let loc_str loc =
       Pretty.sprint max_int (Cil.d_loc () loc) in
 
-
   let c_str t =
       Pretty.sprint max_int (Cil.d_const () t) in
 
@@ -449,7 +450,6 @@ object (self)
   val mutable plinter_list: string list = [] (* unify pl interface*)
   val mutable cur_ret_type : string = ""
   inherit nopCilVisitor
-
 
   method update_whitelist =
     let aux s1 s2 =
@@ -497,27 +497,22 @@ object (self)
   method mkPtrInit lv rv =
     let lv_str i =
       Pretty.sprint max_int (Cil.d_lval () i) in
-        "babelPtrInit("^(String.uppercase (lv_str lv))^", "^(String.uppercase (rv.vname))^"),"
+    "babelPtrInit("^(String.uppercase (lv_str lv))^", "^(String.uppercase (rv.vname))^"),"
 
   method babel_getaddr lv =
     let lv_str i =
       Pretty.sprint max_int (Cil.d_lval () i) in
-        "babel_getaddr("^(lv_str lv)^", Addr),"
+    "babel_getaddr("^(lv_str lv)^", Addr),"
 
   method babel_setvalue lv =
     let lv_str i =
       Pretty.sprint max_int (Cil.d_lval () i) in
-        "babel_setvalue("^(lv_str lv)^", Val),"
+    "babel_setvalue("^(lv_str lv)^", Val),"
 
   method babel_getvalue e =
     let e_str i =
       Pretty.sprint max_int (Cil.d_exp () i) in
-        match e with
-        (*
-        | Const ->
-         *)
-        | _ ->
-        "babel_getvalue("^(e_str e)^", Val),"
+    "babel_getvalue("^(e_str e)^", Val),"
 
   method has s1 s2 =
     let re = Str.regexp_string s2 in
@@ -538,7 +533,7 @@ object (self)
       let tl = self#expl_to_ctypel elist
       and c = ref 0 in
       let args = List.map (self#singleArg c) tl in
-        String.concat ", " args
+      String.concat ", " args
 
   method ret lv =
      let t_str t =
@@ -594,12 +589,10 @@ object (self)
             "*babel_ret = "^fn'^"("^vars1^");\nreturn PL_TRUE;"
         end
 
-
-
- method createCallNoRet fexp elist =
+  method createCallNoRet fexp elist =
       let fname = e_str fexp in
       let vars = self#varList elist in
-        fname^"("^vars^");\nreturn PL_TRUE;"
+      fname^"("^vars^");\nreturn PL_TRUE;"
 
   method createCInterface lv fexp elist =
     let is_fp fn =
@@ -1884,7 +1877,7 @@ object (self)
     let help var = E.log "variable in loop %s\n" var in
     List.iter help l
 
-  (*basically we need transfer c while(1) loop into this kidn of Prolog code
+  (*basically we need transfer c while(1) loop into this kind of Prolog code
     *  loop_entry(N, A, ResultN, ResultA) :-
       N > 0,!,                    <---- we should transform it like this
     succ(N0, N),
@@ -1901,21 +1894,37 @@ loop_entry(N1, A1, FinalN, FinalA).
 loop_entry(N0, A0, N0, A0).
  *)
 
+ method int_of_string_default str default =
+   try
+     int_of_string str
+   with Failure _ -> default
+
   method entry_loop varList =
     let ssaVarSplit acc name =
       let l = String.length name in
-      let count = int_of_string (String.sub name (l-2) 2)
-      and varName = String.sub name 0 (l-2) in
+      let check_str s =
+        try int_of_string s |> ignore; true
+        with Failure _ -> false
+      in
+      let count =
+        if l>1 && check_str (String.sub name (l-2) 2)
+          then int_of_string (String.sub name (l-2) 2)
+          else 1
+      and varName =
+        if l>1 && check_str (String.sub name (l-2) 2)
+          then String.sub name 0 (l-2)
+          else name
+      in
         Hashtbl.add acc varName count; acc in
     let tempTable = List.fold_left ssaVarSplit (Hashtbl.create 30) varList
     and entryVars  = (Hashtbl.create 10) in
-      let findMin name count =
+    let findMin name count =
         if Hashtbl.mem entryVars name then
           let minCount = Hashtbl.find entryVars name in
             Hashtbl.replace entryVars name (min count minCount)
         else Hashtbl.add entryVars name count in
-      Hashtbl.iter findMin tempTable;
-      entryVars
+    Hashtbl.iter findMin tempTable;
+    entryVars
 
   method printEntryVarInLoop entryVarsTable =
     let queue1 = Queue.create ()
@@ -1949,8 +1958,19 @@ loop_entry(N0, A0, N0, A0).
   method findExitVarInLoop varList =
   let ssaVarSplit acc name =
     let l = String.length name in
-    let count = int_of_string (String.sub name (l-2) 2)
-    and varName = String.sub name 0 (l-2) in
+    let check_str s =
+      try int_of_string s |> ignore; true
+      with Failure _ -> false
+    in
+    let count =
+      if l>1 && check_str (String.sub name (l-2) 2)
+        then int_of_string (String.sub name (l-2) 2)
+        else 1
+    and varName =
+      if l>1 && check_str (String.sub name (l-2) 2)
+        then String.sub name 0 (l-2)
+        else name
+    in
       Hashtbl.add acc varName count; acc in
   let tempTable = List.fold_left ssaVarSplit (Hashtbl.create 30) varList
   and entryVars  = (Hashtbl.create 10) in
