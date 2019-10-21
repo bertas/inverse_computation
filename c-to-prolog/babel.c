@@ -33,3 +33,23 @@ PlBool babel__implicit_mainc_1(char const   */* __restrict  */ arg_0, int  arg_1
 printf(arg_0, arg_1, arg_2);
 return PL_TRUE;
 }
+PlBool babel__implicit_mainc_0(char const   */* __restrict  */ arg_0, int  arg_1) 
+{
+printf(arg_0, arg_1);
+return PL_TRUE;
+}
+PlBool babel__implicit_mainc_0(char const   */* __restrict  */ arg_0, int  arg_1) 
+{
+printf(arg_0, arg_1);
+return PL_TRUE;
+}
+PlBool babel__implicit_mainc_0(char const   */* __restrict  */ arg_0, int  arg_1) 
+{
+printf(arg_0, arg_1);
+return PL_TRUE;
+}
+PlBool babel__implicit_mainc_0(char const   */* __restrict  */ arg_0, int  arg_1) 
+{
+printf(arg_0, arg_1);
+return PL_TRUE;
+}

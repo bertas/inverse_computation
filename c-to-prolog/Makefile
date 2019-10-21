@@ -1,2 +1,6 @@
 all: $(objects)
-	ocamlfind ocamlopt -o p2b -linkpkg -package unix,cil p2b.ml
+	ocamlfind ocamlc -g -o c2p -linkpkg -package unix,cil c2p.ml
+	#ocamlfind ocamlopt -g -o c2p -linkpkg -package unix,cil c2p.ml
+
+clean:
+	rm -rf *.o *.cmx *.cmi c2p

@@ -1,7 +1,7 @@
 objects = ctoputil.cmx blacklist.cmx flushmem.cmx loop2rec.cmx splitpath.cmx killmemop.cmx threetuple.cmx killglob.cmx pssa.cmx
 
 all: $(objects)
-	ocamlfind ocamlopt -o c2p -linkpkg -package unix,cil $(objects) main.ml
+	ocamlfind ocamlopt -o pre -linkpkg -package unix,cil $(objects) main.ml
 
 ctoputil.cmx: ctoputil.ml
 	ocamlfind ocamlopt -c -package unix,cil ctoputil.ml
@@ -60,4 +60,7 @@ pssa.cmo: pssa.ml ctoputil.ml
 	ocamlfind ocamlc -g -c -package unix,cil pssa.ml
 
 db: $(objects-db)
-	ocamlfind ocamlc -g -o c2p-db -linkpkg -package unix,cil $(objects-db) main.ml
+	ocamlfind ocamlc -g -o pre-db -linkpkg -package unix,cil $(objects-db) main.ml
+
+clean:
+	rm -rf *.o *.cmx *.cmi pre pre-db
