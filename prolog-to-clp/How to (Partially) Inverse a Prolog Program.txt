@@ -1,0 +1,30 @@
+# How to (Partially) Inverse a Prolog Program
+In this paper we will investigate how to partially inverse a Prolog program in order to assist our crash analysis of the corresponding C program. 
+
+We first define some of the preliminaries to assist the discussion of the (partial) inverse of a Prolog program. We assume that all clauses of a program *P* are numbered from *c1* to *cn*. Literals of clauses are numbered from left to right, such that the head of a clause is numbered 0, the first atom of the body is numbered 1, and so on. Arguments of literals are numbered from left to right starting at 1.
+
+For a clause *c*, the **position** of the *kth* argument of *jth* literal can be uniquely defined in the program *P* using the tuple <*c*,*j*,*p*,*k*>, where *p* is the predicate symbol of the *jth* literal of *c*. By convention, the *ith* literal of the clause *c* whose predicate symbol is *p* can be denoted using <*c*,*i*,*p*,*0*>. 
+*Pos(X)* is then the set of all positions of *X*, where *X* can be either an argument, a literal, a clause or a program.
+
+Let *α* and *β* be the positions of two arguments *a* and *b* such that *α* = <*c1*,*j*,*p*,*k*> and *β* = <*c2*,*0*,*p*, *k*> where j isn't 0. **unify**(*α*,*β*) means that there exists a renaming substitution *θ* such that *aθ* has no variable in common with b and there exists substitution *‌σ* such that *aθσ* = *bσ*.
+
+We also consider the mode annotation *in*, *out*, *in/out* or *none* which will be assumed by all the positions. *in* is either in the heads (ground on invocation) or the bodies (ground on success) of clauses. *out* is either in the heads (ground on success) or the bodies (ground on invocation) of clauses. *in/out* is for the positions which are both *in* and *out*. *none* is for the positions which are unannotated. We denote the set of input positions of the program P using *Ι(P)* and the set of output positions of the program P using *Ο(P)*.
+
+To ensure that the partially inverse program maintains the same control flow as in the original program, it is necessary to guarantee that no clauses not executed by the original program are executed in the partially inverse program, and that all the clauses in the partially inverse program that should be executed are reachable from the top level goal.
+
+The criterion for a successful inverse should include:
+1. A **goal**, *g0*, to be able to talk about semantics;
+2. A set of **positions**, *P*, that the user is interested in preserving the declarative semantics of;
+3. The **success leaf** of the SLD-derivation of interest, *E*, which symbolizes the values at the crash site which we are focused on.
+In short, the inverse criterion can be summed as a triple <*g0*,*P*,*E*>.
+
+To get a inverse of a Prolog program, we carry out the implementation in two stages:
+1. Compute a first set of positions that should belong to the inverse program.
+2. Construct an executable inverse from the previously obtained set of positions.
+
+The first stage can be further divided into two loops. In the first loop, we compute all the positions needed to ensure the **data flow**, using a closure which finds all the positions *α* of the program such that *α* -> *β* where *β* is a position of the inverse criterion. In the second loop we ensure that all the positions computed in the inverse must be in clauses that can be called when executing the top level goal. This is necessary to preserve the integrity of the intended **control flow**. 
+
+For the second stage, we map the elements in the set of positions calculated in stage  1 (denoted as *Pinverse*) to the original program to obtain an inverse program. This is carried out in three levels: the program level, the clause level and the argument level.
+
+
+

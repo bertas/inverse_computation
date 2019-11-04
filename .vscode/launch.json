@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+
+      {
+        "name": "OCaml Debug",
+        "type": "ocaml-debugger",
+        "request": "launch",
+        "program": "${workspaceFolder}/c-to-prolog/c2p",
+        "arguments": ["${workspaceFolder}/c-to-prolog/divide_by_zero_gcc_c2p.c"]
+      }
+    ]
+  }
